@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { UserMenu } from "@/components/user-menu"
 
 export default function ArtistDashboard() {
   const [activeTab, setActiveTab] = useState("overview")
@@ -70,10 +71,7 @@ export default function ArtistDashboard() {
                 <Eye className="w-4 h-4 mr-2" />
                 View Profile
               </Button>
-              <Avatar className="w-8 h-8">
-                <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                <AvatarFallback>PS</AvatarFallback>
-              </Avatar>
+              <UserMenu />
             </div>
           </div>
         </div>

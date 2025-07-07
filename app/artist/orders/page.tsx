@@ -9,7 +9,6 @@ import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   Search,
-  Filter,
   BarChart3,
   ShoppingBag,
   Settings,
@@ -27,6 +26,7 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { UserMenu } from "@/components/user-menu"
 
 export default function ArtistOrdersPage() {
   const [orders, setOrders] = useState([
@@ -164,10 +164,7 @@ export default function ArtistOrdersPage() {
                 <Eye className="w-4 h-4 mr-2" />
                 View Profile
               </Button>
-              <Avatar className="w-8 h-8">
-                <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                <AvatarFallback>PS</AvatarFallback>
-              </Avatar>
+              <UserMenu />
             </div>
           </div>
         </div>
@@ -292,10 +289,6 @@ export default function ArtistOrdersPage() {
                       <Input placeholder="Search orders..." className="pl-10" />
                     </div>
                   </div>
-                  <Button variant="outline" size="sm">
-                    <Filter className="w-4 h-4 mr-2" />
-                    Filter
-                  </Button>
                 </div>
               </CardContent>
             </Card>

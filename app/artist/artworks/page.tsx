@@ -20,10 +20,12 @@ import {
   Edit,
   Trash2,
   Plus,
-  MoreHorizontal,
 } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { UploadArtworkModal } from "@/components/upload-artwork-modal"
+import { EditArtworkModal } from "@/components/edit-artwork-modal"
+import { UserMenu } from "@/components/user-menu"
 
 export default function ArtistArtworksPage() {
   const [artworks, setArtworks] = useState([
@@ -37,6 +39,7 @@ export default function ArtistArtworksPage() {
       status: "Published",
       category: "Painting",
       createdDate: "Dec 15, 2024",
+      description: "A beautiful sunset painting",
     },
     {
       id: 2,
@@ -48,6 +51,7 @@ export default function ArtistArtworksPage() {
       status: "Draft",
       category: "Sculpture",
       createdDate: "Dec 12, 2024",
+      description: "A modern urban sculpture",
     },
     {
       id: 3,
@@ -59,6 +63,7 @@ export default function ArtistArtworksPage() {
       status: "Published",
       category: "Digital Art",
       createdDate: "Dec 10, 2024",
+      description: "A vibrant digital mandala",
     },
     {
       id: 4,
@@ -70,10 +75,22 @@ export default function ArtistArtworksPage() {
       status: "Published",
       category: "Photography",
       createdDate: "Dec 8, 2024",
+      description: "A stunning morning glory photograph",
     },
   ])
 
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
+
+  const handleEditArtwork = (artwork: any) => {
+    // Update artwork logic
+    console.log("Updating artwork:", artwork)
+  }
+
+  const handleDeleteArtwork = (artworkId: number) => {
+    if (confirm("Are you sure you want to delete this artwork?")) {
+      setArtworks(artworks.filter((art) => art.id !== artworkId))
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:to-purple-900/20">
@@ -97,10 +114,7 @@ export default function ArtistArtworksPage() {
                 <Eye className="w-4 h-4 mr-2" />
                 View Profile
               </Button>
-              <Avatar className="w-8 h-8">
-                <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                <AvatarFallback>PS</AvatarFallback>
-              </Avatar>
+              <UserMenu />
             </div>
           </div>
         </div>
@@ -164,10 +178,12 @@ export default function ArtistArtworksPage() {
                 <h1 className="text-3xl font-bold mb-2">My Artworks</h1>
                 <p className="text-muted-foreground">Manage and showcase your creative works</p>
               </div>
-              <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
-                <Plus className="w-4 h-4 mr-2" />
-                Upload Artwork
-              </Button>
+              <UploadArtworkModal>
+                <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Upload Artwork
+                </Button>
+              </UploadArtworkModal>
             </div>
 
             {/* Filters and Search */}
@@ -247,11 +263,27 @@ export default function ArtistArtworksPage() {
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-green-600">{artwork.price}</span>
                             <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button variant="outline" size="sm">
-                                <MoreHorizontal className="w-4 h-4" />
+                              <EditArtworkModal
+                                artwork={{
+                                  id: artwork.id,
+                                  title: artwork.title,
+                                  description: artwork.description || "",
+                                  price: artwork.price.replace("₹", ""),
+                                  category: artwork.category,
+                                  medium: "",
+                                  dimensions: "",
+                                  tags: [],
+                                  isForSale: true,
+                                  isCommissionable: false,
+                                }}
+                                onSave={handleEditArtwork}
+                              >
+                                <Button variant="outline" size="sm">
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </EditArtworkModal>
+                              <Button variant="outline" size="sm" onClick={() => handleDeleteArtwork(artwork.id)}>
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>

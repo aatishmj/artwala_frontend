@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
   Search,
-  Filter,
   Home,
   Compass,
   User,
@@ -133,9 +132,6 @@ export default function ExplorePage() {
 
             <div className="flex items-center gap-4">
               <ThemeToggle />
-              <Button variant="ghost" size="sm">
-                <Filter className="w-4 h-4" />
-              </Button>
               <Avatar className="w-8 h-8">
                 <AvatarImage src="/placeholder.svg?height=32&width=32" />
                 <AvatarFallback>U</AvatarFallback>

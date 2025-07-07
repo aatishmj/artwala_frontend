@@ -29,14 +29,21 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <Button variant="outline" size="sm">
-              About Us
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/about">About Us</Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/community">Join Community</Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/auth/login">Login</Link>
             </Button>
             <Button
               size="sm"
               className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 shadow-lg"
+              asChild
             >
-              Join Community
+              <Link href="/auth/signup">Sign Up</Link>
             </Button>
           </div>
         </div>
@@ -123,7 +130,7 @@ export default function HomePage() {
                   <span>Join city-based chapters</span>
                 </div>
               </div>
-              <Link href="/auth/signup?type=artist" className="block">
+              <Link href="/auth/login?type=artist" className="block">
                 <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
                   Join as Artist
                   <ArrowRight className="w-4 h-4 ml-2" />
@@ -162,7 +169,7 @@ export default function HomePage() {
                   <span>Support local art communities</span>
                 </div>
               </div>
-              <Link href="/auth/signup?type=user" className="block">
+              <Link href="/auth/login?type=user" className="block">
                 <Button className="w-full bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700">
                   Explore Art
                   <ArrowRight className="w-4 h-4 ml-2" />

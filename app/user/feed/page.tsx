@@ -12,17 +12,20 @@ import {
   Share2,
   Bookmark,
   Search,
-  Filter,
   Home,
   Compass,
   User,
   ShoppingBag,
   Palette,
-  MoreHorizontal,
   Eye,
 } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { ArtistProfileModal } from "@/components/artist-profile-modal"
+import { UserMenu } from "@/components/user-menu"
+import { StoryViewer } from "@/components/story-viewer"
+import { CommentSection } from "@/components/comment-section"
+import { ShareModal } from "@/components/share-modal"
 
 export default function UserFeed() {
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set())
@@ -138,13 +141,7 @@ export default function UserFeed() {
 
             <div className="flex items-center gap-4">
               <ThemeToggle />
-              <Button variant="ghost" size="sm">
-                <Filter className="w-4 h-4" />
-              </Button>
-              <Avatar className="w-8 h-8">
-                <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
+              <UserMenu />
             </div>
           </div>
         </div>
@@ -204,17 +201,34 @@ export default function UserFeed() {
               <CardContent className="p-4">
                 <div className="flex gap-4 overflow-x-auto pb-2">
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="flex flex-col items-center gap-2 min-w-[70px]">
-                      <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg p-0.5">
-                        <div className="w-full h-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center">
-                          <Avatar className="w-14 h-14">
-                            <AvatarImage src={`/placeholder.svg?height=56&width=56`} />
-                            <AvatarFallback>A{i}</AvatarFallback>
-                          </Avatar>
+                    <StoryViewer
+                      key={i}
+                      stories={[
+                        {
+                          id: i,
+                          artist: {
+                            name: `Artist ${i}`,
+                            username: `@artist${i}`,
+                            avatar: `/placeholder.svg?height=56&width=56`,
+                          },
+                          image: `/placeholder.svg?height=400&width=300`,
+                          timestamp: "2h ago",
+                        },
+                      ]}
+                      initialStoryIndex={0}
+                    >
+                      <div className="flex flex-col items-center gap-2 min-w-[70px] cursor-pointer">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg p-0.5">
+                          <div className="w-full h-full rounded-full bg-white dark:bg-gray-800 flex items-center justify-center">
+                            <Avatar className="w-14 h-14">
+                              <AvatarImage src={`/placeholder.svg?height=56&width=56`} />
+                              <AvatarFallback>A{i}</AvatarFallback>
+                            </Avatar>
+                          </div>
                         </div>
+                        <span className="text-xs text-center">Artist {i}</span>
                       </div>
-                      <span className="text-xs text-center">Artist {i}</span>
-                    </div>
+                    </StoryViewer>
                   ))}
                 </div>
               </CardContent>
@@ -226,10 +240,29 @@ export default function UserFeed() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={post.artist.avatar || "/placeholder.svg"} />
-                        <AvatarFallback>{post.artist.name[0]}</AvatarFallback>
-                      </Avatar>
+                      <ArtistProfileModal
+                        artist={{
+                          id: post.artist.id,
+                          name: post.artist.name,
+                          username: post.artist.username,
+                          avatar: post.artist.avatar,
+                          verified: post.artist.verified,
+                          bio: "Contemporary artist specializing in oil paintings and digital art.",
+                          location: "Mumbai, India",
+                          website: "https://example.com",
+                          followers: 2341,
+                          following: 156,
+                          artworks: 45,
+                          joinedDate: "January 2020",
+                        }}
+                      >
+                        <div className="cursor-pointer">
+                          <Avatar>
+                            <AvatarImage src={post.artist.avatar || "/placeholder.svg"} />
+                            <AvatarFallback>{post.artist.name[0]}</AvatarFallback>
+                          </Avatar>
+                        </div>
+                      </ArtistProfileModal>
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-semibold">{post.artist.name}</span>
@@ -253,9 +286,6 @@ export default function UserFeed() {
                         onClick={() => toggleFollow(post.artist.id)}
                       >
                         {followedArtists.has(post.artist.id) ? "Following" : "Follow"}
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <MoreHorizontal className="w-4 h-4" />
                       </Button>
                     </div>
                   </div>
@@ -282,13 +312,43 @@ export default function UserFeed() {
                         <Heart className={`w-5 h-5 ${likedPosts.has(post.id) ? "fill-current" : ""}`} />
                         <span className="ml-1">{post.likes + (likedPosts.has(post.id) ? 1 : 0)}</span>
                       </Button>
-                      <Button variant="ghost" size="sm">
-                        <MessageCircle className="w-5 h-5" />
-                        <span className="ml-1">{post.comments}</span>
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Share2 className="w-5 h-5" />
-                      </Button>
+                      <CommentSection
+                        postId={post.id}
+                        comments={[
+                          {
+                            id: 1,
+                            user: {
+                              name: "John Doe",
+                              username: "@johndoe",
+                              avatar: "/placeholder.svg?height=32&width=32",
+                            },
+                            content: "Beautiful artwork! Love the colors.",
+                            likes: 5,
+                            timestamp: "2h ago",
+                          },
+                          {
+                            id: 2,
+                            user: {
+                              name: "Jane Smith",
+                              username: "@janesmith",
+                              avatar: "/placeholder.svg?height=32&width=32",
+                            },
+                            content: "This is amazing! How long did it take to create?",
+                            likes: 3,
+                            timestamp: "1h ago",
+                          },
+                        ]}
+                      >
+                        <Button variant="ghost" size="sm">
+                          <MessageCircle className="w-5 h-5" />
+                          <span className="ml-1">{post.comments}</span>
+                        </Button>
+                      </CommentSection>
+                      <ShareModal postUrl={`https://artwala.com/post/${post.id}`} postTitle={post.title}>
+                        <Button variant="ghost" size="sm">
+                          <Share2 className="w-5 h-5" />
+                        </Button>
+                      </ShareModal>
                     </div>
                     <Button
                       variant="ghost"

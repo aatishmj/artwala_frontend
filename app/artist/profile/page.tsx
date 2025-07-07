@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Edit, MapPin, Calendar, Instagram, Twitter, Globe, Save, Eye, Heart, Palette } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { UserMenu } from "@/components/user-menu"
 
 export default function ArtistProfile() {
   const artistStats = {
@@ -99,6 +100,7 @@ export default function ArtistProfile() {
                 <Eye className="w-4 h-4 mr-2" />
                 Preview Public Profile
               </Button>
+              <UserMenu />
             </div>
           </div>
         </div>
