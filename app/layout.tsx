@@ -2,14 +2,15 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { AuthProvider } from "@/components/auth-context"
+import { ThemeProvider } from "@/components/theme-provider"
+import { AuthProvider } from "@/hooks/useAuth"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Mud & Art - Handcrafted Pottery",
+  title: "ARTWALA Foundation - Empowering Creators, Connecting Communities",
   description:
-    "Discover unique, handcrafted ceramic pottery that blends traditional techniques with contemporary design.",
+    "An artist-led NGO dedicated to empowering creators, promoting visual literacy, and connecting the art community through mentorship, events, and digital promotion.",
     generator: 'v0.dev'
 }
 
@@ -19,9 +20,17 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <AuthProvider>{children}</AuthProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.className} antialiased`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem={true}
+          disableTransitionOnChange={false}
+          storageKey="artwala-theme"
+        >
+          <AuthProvider>{children}</AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

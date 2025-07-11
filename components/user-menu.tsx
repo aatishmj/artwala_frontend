@@ -1,73 +1,114 @@
 "use client"
-import Image from "next/image"
 import { Button } from "@/components/ui/button"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { User, Settings, Package, Heart, LogOut, ChevronDown } from "lucide-react"
-import { useAuth } from "./auth-context"
+import { User, Settings, Heart, ShoppingBag, LogOut, MessageCircle, Palette } from "lucide-react"
+import Link from "next/link"
+import { useAuth } from "@/hooks/useAuth"
+import { useRouter } from "next/navigation"
 
 export function UserMenu() {
   const { user, logout } = useAuth()
+  const router = useRouter()
+
+  const handleLogout = () => {
+    logout()
+    router.push("/")
+  }
 
   if (!user) return null
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex items-center space-x-2 hover:bg-stone-100">
-          <div className="w-8 h-8 rounded-full overflow-hidden bg-stone-200">
-            {user.avatar ? (
-              <Image
-                src={user.avatar || "/placeholder.svg"}
-                alt={user.name}
-                width={32}
-                height={32}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-500 to-amber-600">
-                <span className="text-white text-sm font-medium">{user.name.charAt(0).toUpperCase()}</span>
-              </div>
-            )}
-          </div>
-          <span className="hidden md:block text-stone-800 font-medium">{user.name}</span>
-          <ChevronDown className="w-4 h-4 text-stone-600" />
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={user.profile_image || "/placeholder.svg?height=32&width=32"} />
+            <AvatarFallback>{user.first_name[0]}</AvatarFallback>
+          </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium text-stone-900">{user.name}</p>
-            <p className="text-xs text-stone-600">{user.email}</p>
+      <DropdownMenuContent className="w-56" align="end" forceMount>
+        <div className="flex items-center justify-start gap-2 p-2">
+          <div className="flex flex-col space-y-1 leading-none">
+            <p className="font-medium">
+              {user.first_name} {user.last_name}
+            </p>
+            <p className="w-[200px] truncate text-sm text-muted-foreground">{user.email}</p>
           </div>
-        </DropdownMenuLabel>
+        </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer">
-          <User className="w-4 h-4 mr-2" />
-          Profile
-        </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
-          <Package className="w-4 h-4 mr-2" />
-          My Orders
-        </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
-          <Heart className="w-4 h-4 mr-2" />
-          Wishlist
-        </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
-          <Settings className="w-4 h-4 mr-2" />
-          Settings
+
+        {user.user_type === "user" ? (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/user/profile">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/user/saved">
+                <Heart className="mr-2 h-4 w-4" />
+                <span>Wishlist</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/user/orders">
+                <ShoppingBag className="mr-2 h-4 w-4" />
+                <span>Orders</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/messages">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                <span>Messages</span>
+              </Link>
+            </DropdownMenuItem>
+          </>
+        ) : (
+          <>
+            <DropdownMenuItem asChild>
+              <Link href="/artist/profile">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/artist/artworks">
+                <Palette className="mr-2 h-4 w-4" />
+                <span>My Artworks</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/artist/orders">
+                <ShoppingBag className="mr-2 h-4 w-4" />
+                <span>Orders</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/messages">
+                <MessageCircle className="mr-2 h-4 w-4" />
+                <span>Messages</span>
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+
+        <DropdownMenuItem>
+          <Settings className="mr-2 h-4 w-4" />
+          <span>Settings</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer text-red-600" onClick={logout}>
-          <LogOut className="w-4 h-4 mr-2" />
-          Sign Out
+        <DropdownMenuItem onClick={handleLogout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          <span>Log out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
