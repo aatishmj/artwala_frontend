@@ -38,8 +38,15 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [id]: value,
+    }))
+  }
+
+  const handleSelectChange = (id: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [id]: value,
@@ -240,7 +247,7 @@ export default function CheckoutPage() {
                     </Label>
                     <Select
                       value={formData.state}
-                      onValueChange={(value) => handleInputChange({ target: { id: "state", value } })}
+                      onValueChange={(value) => handleSelectChange("state", value)}
                     >
                       <SelectTrigger className="border-stone-200">
                         <SelectValue placeholder="Select state" />
@@ -402,7 +409,7 @@ export default function CheckoutPage() {
                         </Label>
                         <Select
                           value={formData.bank}
-                          onValueChange={(value) => handleInputChange({ target: { id: "bank", value } })}
+                          onValueChange={(value) => handleSelectChange("bank", value)}
                         >
                           <SelectTrigger className="border-stone-200">
                             <SelectValue placeholder="Choose your bank" />
@@ -431,7 +438,11 @@ export default function CheckoutPage() {
                 </RadioGroup>
 
                 <div className="flex items-center space-x-2 pt-4">
-                  <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={setAgreedToTerms} />
+                  <Checkbox 
+                    id="terms" 
+                    checked={agreedToTerms} 
+                    onCheckedChange={(checked) => setAgreedToTerms(checked === true)} 
+                  />
                   <Label htmlFor="terms" className="text-sm text-stone-700">
                     I agree to the{" "}
                     <Link href="#" className="text-amber-700 hover:underline">

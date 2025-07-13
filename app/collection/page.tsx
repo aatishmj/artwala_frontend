@@ -14,18 +14,45 @@ import { CartSidebar } from "@/components/cart-sidebar"
 import { WishlistSidebar } from "@/components/wishlist-sidebar"
 import { ProductDetailModal } from "@/components/product-detail-modal"
 
+// Type definitions
+interface Product {
+  id: number
+  name: string
+  price: string | number
+  originalPrice?: number
+  image: string
+  rating: number
+  reviews: number
+  badge?: string
+  category: string
+  size: string
+  color: string
+  description: string
+  dimensions: string
+  weight: string
+  material: string
+}
+
+interface LocalCartItem {
+  id: number
+  name: string
+  price: string | number
+  image: string
+  quantity: number
+}
+
 export default function CollectionPage() {
-  const [cartItems, setCartItems] = useState([])
-  const [wishlist, setWishlist] = useState([])
+  const [cartItems, setCartItems] = useState<LocalCartItem[]>([])
+  const [wishlist, setWishlist] = useState<Product[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [selectedSize, setSelectedSize] = useState("all")
   const [sortBy, setSortBy] = useState("featured")
 
-  const [selectedProduct, setSelectedProduct] = useState(null)
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const addToCart = (product) => {
+  const addToCart = (product: Product) => {
     setCartItems((prev) => {
       const existingItem = prev.find((item) => item.id === product.id)
       if (existingItem) {
@@ -46,7 +73,7 @@ export default function CollectionPage() {
     // Remove this line: alert(`${product.name} added to cart!`)
   }
 
-  const updateQuantity = (id, quantity) => {
+  const updateQuantity = (id: number, quantity: number) => {
     if (quantity === 0) {
       removeFromCart(id)
     } else {
@@ -54,11 +81,11 @@ export default function CollectionPage() {
     }
   }
 
-  const removeFromCart = (id) => {
+  const removeFromCart = (id: number) => {
     setCartItems((prev) => prev.filter((item) => item.id !== id))
   }
 
-  const toggleWishlist = (product) => {
+  const toggleWishlist = (product: Product) => {
     setWishlist((prev) => {
       const isInWishlist = prev.some((item) => item.id === product.id)
       if (isInWishlist) {
@@ -69,11 +96,29 @@ export default function CollectionPage() {
     })
   }
 
-  const removeFromWishlist = (product) => {
+  const removeFromWishlist = (product: Product) => {
     setWishlist((prev) => prev.filter((item) => item.id !== product.id))
   }
 
-  const openProductModal = (product) => {
+  // Wrapper functions for WishlistSidebar compatibility
+  const removeFromWishlistWrapper = (item: any) => {
+    removeFromWishlist(item as Product)
+  }
+
+  const addToCartWrapper = (item: any) => {
+    addToCart(item as Product)
+  }
+
+  // Convert LocalCartItem to CartItem for CartSidebar compatibility
+  const cartItemsForSidebar = cartItems.map(item => ({
+    id: item.id,
+    name: item.name,
+    price: typeof item.price === 'string' ? parseFloat(item.price.replace('$', '')) : item.price,
+    image: item.image,
+    quantity: item.quantity
+  }))
+
+  const openProductModal = (product: Product) => {
     setSelectedProduct(product)
     setIsModalOpen(true)
   }
@@ -258,8 +303,8 @@ export default function CollectionPage() {
             </nav>
 
             <div className="flex items-center space-x-4">
-              <WishlistSidebar wishlistItems={wishlist} removeFromWishlist={removeFromWishlist} addToCart={addToCart} />
-              <CartSidebar cartItems={cartItems} updateQuantity={updateQuantity} removeFromCart={removeFromCart} />
+              <WishlistSidebar wishlistItems={wishlist} removeFromWishlist={removeFromWishlistWrapper} addToCart={addToCartWrapper} />
+              <CartSidebar cartItems={cartItemsForSidebar} updateQuantity={updateQuantity} removeFromCart={removeFromCart} />
             </div>
           </div>
         </div>
