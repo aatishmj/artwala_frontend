@@ -1,14 +1,14 @@
 "use client"
 
 import React, { useState, useEffect, createContext, useContext, type ReactNode } from "react"
-import { apiClient, tokenManager, type User, type LoginData, type RegisterData } from "@/lib/api"
+import { apiClient, tokenManager, type User, type LoginData, type RegisterData, type AuthResponse } from "@/lib/api"
 
 interface AuthContextType {
   user: User | null
   loading: boolean
-  login: (data: LoginData) => Promise<void>
-  register: (data: RegisterData) => Promise<void>
-  logout: () => void
+  login: (data: LoginData) => Promise<AuthResponse>
+  register: (data: RegisterData) => Promise<AuthResponse>
+  logout: () => Promise<void>
   updateProfile: (data: Partial<User>) => Promise<void>
   isAuthenticated: boolean
 }
@@ -59,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tokenManager.setTokens(response.access, response.refresh)
       tokenManager.setUser(response.user)
       setUser(response.user)
+      return response
     } catch (error) {
       console.error("Login failed:", error)
       throw error
@@ -71,15 +72,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tokenManager.setTokens(response.access, response.refresh)
       tokenManager.setUser(response.user)
       setUser(response.user)
+      return response
     } catch (error) {
       console.error("Registration failed:", error)
       throw error
     }
   }
 
-  const logout = () => {
-    tokenManager.clearTokens()
-    setUser(null)
+  const logout = async () => {
+    try {
+      await apiClient.logout()
+    } catch (error) {
+      console.error("Logout failed:", error)
+    } finally {
+      setUser(null)
+    }
   }
 
   const updateProfile = async (data: Partial<User>) => {

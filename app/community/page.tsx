@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Palette, Users, Calendar, MapPin, ArrowLeft, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { ProtectedRoute } from "@/components/protected-route"
 
 export default function CommunityPage() {
   const cityChapters = [
@@ -48,7 +49,8 @@ export default function CommunityPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:to-purple-900/20">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:to-purple-900/20">
       {/* Header */}
       <header className="border-b bg-white/90 dark:bg-gray-900/90 backdrop-blur-md">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -208,5 +210,6 @@ export default function CommunityPage() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   )
 }

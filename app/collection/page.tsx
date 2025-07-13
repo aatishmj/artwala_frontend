@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ProtectedRoute } from "@/components/protected-route"
 import { Heart, ShoppingCart, Star, Filter, Search, Grid, List } from "lucide-react"
 import { CartSidebar } from "@/components/cart-sidebar"
 import { WishlistSidebar } from "@/components/wishlist-sidebar"
@@ -227,7 +228,8 @@ export default function CollectionPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50 to-yellow-50">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50 to-yellow-50">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-200">
         <div className="container mx-auto px-4 py-4">
@@ -442,5 +444,6 @@ export default function CollectionPage() {
         isInWishlist={selectedProduct ? wishlist.some((item) => item.id === selectedProduct.id) : false}
       />
     </div>
+    </ProtectedRoute>
   )
 }

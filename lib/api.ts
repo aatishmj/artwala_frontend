@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://127.0.0.1:8000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"
 
 // Types
 export interface User {
@@ -13,6 +13,9 @@ export interface User {
   bio?: string
   location?: string
   website?: string
+  instagram_handle?: string
+  twitter_handle?: string
+  artist_since?: string
   social_links?: Record<string, string>
   is_verified: boolean
   date_joined: string
@@ -144,7 +147,7 @@ class ApiClient {
     if (!refreshToken) return false
 
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/api/token/refresh/`, {
+      const response = await fetch(`${API_BASE_URL}/api/token/refresh/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -154,7 +157,9 @@ class ApiClient {
 
       if (response.ok) {
         const data = await response.json()
-        tokenManager.setTokens(data.access, refreshToken)
+        // Use the new refresh token if provided, otherwise keep the current one
+        const newRefreshToken = data.refresh || refreshToken
+        tokenManager.setTokens(data.access, newRefreshToken)
         return true
       }
     } catch (error) {
@@ -166,39 +171,54 @@ class ApiClient {
 
   // Auth endpoints
   async register(data: RegisterData): Promise<AuthResponse> {
-    return this.request<AuthResponse>("/auth/api/register/", {
+    const response = await this.request<AuthResponse>("/api/register/", {
       method: "POST",
       body: JSON.stringify(data),
     })
+
+    return response
   }
 
   async login(data: LoginData): Promise<AuthResponse> {
-    const response = await this.request<{ access: string; refresh: string }>("/auth/api/token/", {
+    const response = await this.request<AuthResponse>("/api/login/", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        username: data.email, // Backend expects 'username' field for email/username
+        password: data.password,
+      }),
     })
 
-    // Get user profile after login
+    // Store tokens and user data
     tokenManager.setTokens(response.access, response.refresh)
-    const user = await this.getProfile()
+    tokenManager.setUser(response.user)
 
-    return {
-      user,
-      access: response.access,
-      refresh: response.refresh,
-      message: "Login successful",
-    }
+    return response
   }
 
   async getProfile(): Promise<User> {
-    return this.request<User>("/auth/api/profile/")
+    return this.request<User>("/api/profile/")
   }
 
   async updateProfile(data: Partial<User>): Promise<User> {
-    return this.request<User>("/auth/api/profile/", {
-      method: "PUT",
+    return this.request<User>("/api/profile/", {
+      method: "PATCH",
       body: JSON.stringify(data),
     })
+  }
+
+  async logout(): Promise<void> {
+    const refreshToken = tokenManager.getRefreshToken()
+    if (refreshToken) {
+      try {
+        await this.request("/api/logout/", {
+          method: "POST",
+          body: JSON.stringify({ refresh: refreshToken }),
+        })
+      } catch (error) {
+        console.error("Logout request failed:", error)
+      }
+    }
+    tokenManager.clearTokens()
   }
 
   async verifyToken(): Promise<boolean> {
@@ -206,7 +226,7 @@ class ApiClient {
     if (!accessToken) return false
 
     try {
-      await this.request("/auth/api/token/verify/", {
+      await this.request("/api/token/verify/", {
         method: "POST",
         body: JSON.stringify({ token: accessToken }),
       })
