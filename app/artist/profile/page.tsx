@@ -8,17 +8,47 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Edit, MapPin, Calendar, Instagram, Twitter, Globe, Save, Eye, Heart, Palette } from "lucide-react"
+import { Progress } from "@/components/ui/progress"
+import { Edit, MapPin, Calendar, Instagram, Twitter, Globe, Save, Eye, Heart, Palette, Users, DollarSign } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/user-menu"
+import { EditProfileModal } from "@/components/edit-profile-modal"
+import { useUserProfile, useUserStats, useAuth } from "@/hooks"
+import { getImageUrl } from "@/lib/utils"
 
 export default function ArtistProfile() {
+  const { user } = useAuth()
+  const { profile, loading: profileLoading, error: profileError, updateProfile } = useUserProfile()
+  const { stats, loading: statsLoading } = useUserStats()
+
+  if (profileLoading || statsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (profileError || !profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 dark:text-red-400 mb-4">Failed to load profile</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+      </div>
+    )
+  }
+
   const artistStats = {
-    artworks: 45,
-    followers: 2341,
-    following: 156,
-    totalSales: 89,
+    artworks: stats?.stats.artworks_count || 0,
+    followers: stats?.stats.followers_count || 0,
+    totalLikes: stats?.stats.total_likes_received || 0,
+    totalRevenue: stats?.stats.total_revenue || 0,
   }
 
   const artworks = [
@@ -113,76 +143,123 @@ export default function ArtistProfile() {
             <div className="flex flex-col md:flex-row items-start gap-6">
               <div className="relative">
                 <Avatar className="w-32 h-32">
-                  <AvatarImage src="/placeholder.svg?height=128&width=128" />
-                  <AvatarFallback className="text-2xl">PS</AvatarFallback>
+                  <AvatarImage src={getImageUrl(profile.profile_image)} />
+                  <AvatarFallback className="text-2xl">
+                    {profile.first_name?.[0]}{profile.last_name?.[0]}
+                  </AvatarFallback>
                 </Avatar>
-                <Button size="sm" className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0">
-                  <Edit className="w-4 h-4" />
-                </Button>
+                <EditProfileModal>
+                  <Button size="sm" className="absolute -bottom-2 -right-2 rounded-full w-8 h-8 p-0">
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                </EditProfileModal>
               </div>
 
               <div className="flex-1">
                 <div className="flex items-center gap-4 mb-4">
                   <div>
-                    <h1 className="text-3xl font-bold">Priya Sharma</h1>
-                    <p className="text-muted-foreground">@priya_art</p>
+                    <h1 className="text-3xl font-bold">{profile.full_name || profile.username}</h1>
+                    <p className="text-muted-foreground">@{profile.username}</p>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
-                      <span className="text-white text-xs">✓</span>
+                  {profile.is_verified && (
+                    <div className="flex items-center gap-1">
+                      <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">✓</span>
+                      </div>
+                      <span className="text-sm text-blue-600">Verified Artist</span>
                     </div>
-                    <span className="text-sm text-blue-600">Verified Artist</span>
-                  </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-6 mb-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <MapPin className="w-4 h-4" />
-                    <span>Mumbai, India</span>
-                  </div>
+                  {profile.location && (
+                    <div className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4" />
+                      <span>{profile.location}</span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
-                    <span>Artist since 2020</span>
+                    <span>Artist since {profile.artist_since ? new Date(profile.artist_since).getFullYear() : new Date(profile.date_joined).getFullYear()}</span>
                   </div>
                 </div>
 
                 <p className="text-muted-foreground mb-4 max-w-2xl">
-                  Contemporary artist specializing in oil paintings and digital art. Inspired by nature, urban
-                  landscapes, and human emotions. Featured in multiple exhibitions across India.
+                  {profile.bio || "Contemporary artist specializing in oil paintings and digital art. Inspired by nature, urban landscapes, and human emotions."}
                 </p>
 
+                {/* Profile Completion */}
+                {stats?.profile_completion !== undefined && stats.profile_completion < 100 && (
+                  <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        Complete your profile
+                      </span>
+                      <span className="text-sm text-amber-600 dark:text-amber-400">
+                        {Math.round(stats.profile_completion)}%
+                      </span>
+                    </div>
+                    <Progress value={stats.profile_completion} className="h-2" />
+                  </div>
+                )}
+
                 <div className="flex items-center gap-4 mb-4">
-                  <Button variant="outline" size="sm">
-                    <Instagram className="w-4 h-4 mr-2" />
-                    Instagram
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Twitter className="w-4 h-4 mr-2" />
-                    Twitter
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Globe className="w-4 h-4 mr-2" />
-                    Website
-                  </Button>
+                  {profile.instagram_handle && (
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`https://instagram.com/${profile.instagram_handle}`} target="_blank">
+                        <Instagram className="w-4 h-4 mr-2" />
+                        Instagram
+                      </Link>
+                    </Button>
+                  )}
+                  {profile.twitter_handle && (
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={`https://twitter.com/${profile.twitter_handle}`} target="_blank">
+                        <Twitter className="w-4 h-4 mr-2" />
+                        Twitter
+                      </Link>
+                    </Button>
+                  )}
+                  {profile.website && (
+                    <Button variant="outline" size="sm" asChild>
+                      <Link href={profile.website} target="_blank">
+                        <Globe className="w-4 h-4 mr-2" />
+                        Website
+                      </Link>
+                    </Button>
+                  )}
                 </div>
 
                 <div className="flex gap-6">
                   <div className="text-center">
-                    <div className="font-bold text-xl">{artistStats.artworks}</div>
+                    <div className="font-bold text-xl flex items-center gap-1">
+                      <Palette className="w-4 h-4" />
+                      {artistStats.artworks}
+                    </div>
                     <div className="text-sm text-muted-foreground">Artworks</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-xl">{artistStats.followers.toLocaleString()}</div>
+                    <div className="font-bold text-xl flex items-center gap-1">
+                      <Users className="w-4 h-4" />
+                      {artistStats.followers}
+                    </div>
                     <div className="text-sm text-muted-foreground">Followers</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-xl">{artistStats.following}</div>
-                    <div className="text-sm text-muted-foreground">Following</div>
+                    <div className="font-bold text-xl flex items-center gap-1">
+                      <Heart className="w-4 h-4" />
+                      {artistStats.totalLikes}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Total Likes</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-xl">{artistStats.totalSales}</div>
-                    <div className="text-sm text-muted-foreground">Sales</div>
+                    <div className="font-bold text-xl flex items-center gap-1">
+                      <DollarSign className="w-4 h-4" />
+                      ₹{artistStats.totalRevenue.toLocaleString()}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Revenue</div>
                   </div>
+                    <div className="text-sm text-muted-foreground">Artworks</div>
                 </div>
               </div>
             </div>

@@ -29,25 +29,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const accessToken = tokenManager.getAccessToken()
 
       if (storedUser && accessToken) {
-        // Verify token is still valid
-        const isValid = await apiClient.verifyToken()
-        if (isValid) {
-          setUser(storedUser)
-        } else {
-          // Token invalid, try to get fresh user data
-          try {
-            const freshUser = await apiClient.getProfile()
-            setUser(freshUser)
-            tokenManager.setUser(freshUser)
-          } catch {
-            // Failed to get user, clear tokens
-            tokenManager.clearTokens()
-          }
+        // Try to get fresh user data directly instead of verifying token first
+        try {
+          const freshUser = await apiClient.getProfile()
+          setUser(freshUser)
+          tokenManager.setUser(freshUser)
+        } catch (error) {
+          console.log("Profile fetch failed, clearing auth state")
+          // If profile fetch fails, clear everything to avoid infinite loops
+          tokenManager.clearTokens()
+          setUser(null)
         }
+      } else {
+        // No stored auth data
+        setUser(null)
       }
     } catch (error) {
       console.error("Auth initialization failed:", error)
       tokenManager.clearTokens()
+      setUser(null)
     } finally {
       setLoading(false)
     }
@@ -86,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Logout failed:", error)
     } finally {
       setUser(null)
+      tokenManager.clearTokens()
     }
   }
 

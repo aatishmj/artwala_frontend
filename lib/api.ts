@@ -235,6 +235,54 @@ class ApiClient {
       return false
     }
   }
+
+  // Generic HTTP methods for hooks
+  async get<T>(endpoint: string): Promise<{ data: T }> {
+    const data = await this.request<T>(endpoint)
+    return { data }
+  }
+
+  async post<T>(endpoint: string, body?: any, options?: RequestInit): Promise<{ data: T }> {
+    const config: RequestInit = {
+      method: "POST",
+      ...(body && { body: body instanceof FormData ? body : JSON.stringify(body) }),
+      ...options,
+    }
+    
+    // Don't set Content-Type for FormData
+    if (body instanceof FormData && config.headers) {
+      const headers = { ...config.headers }
+      delete (headers as any)['Content-Type']
+      config.headers = headers
+    }
+    
+    const data = await this.request<T>(endpoint, config)
+    return { data }
+  }
+
+  async patch<T>(endpoint: string, body: any): Promise<{ data: T }> {
+    const data = await this.request<T>(endpoint, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    })
+    return { data }
+  }
+
+  async put<T>(endpoint: string, body: any): Promise<{ data: T }> {
+    const data = await this.request<T>(endpoint, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    })
+    return { data }
+  }
+
+  async delete<T>(endpoint: string): Promise<{ data: T }> {
+    const data = await this.request<T>(endpoint, {
+      method: "DELETE",
+    })
+    return { data }
+  }
 }
 
+// Export the API client instance
 export const apiClient = new ApiClient()
