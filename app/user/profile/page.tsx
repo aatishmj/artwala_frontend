@@ -5,21 +5,57 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Eye, Bookmark, Edit, MapPin, Calendar, LinkIcon } from "lucide-react"
+
+
+
+import { UserMenu } from "@/components/user-menu"
+
+import { useAuth } from "@/hooks/useAuth"
+
+
+
+import { Progress } from "@/components/ui/progress"
+import { Eye, Bookmark, Settings, Edit, MapPin, Calendar, LinkIcon, User, Heart, ShoppingBag } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { UserMenu } from "@/components/user-menu"
 import { EditProfileModal } from "@/components/edit-profile-modal"
-import { useAuth } from "@/hooks/useAuth"
+import { useUserProfile, useUserStats, useAuth } from "@/hooks"
+import { getImageUrl } from "@/lib/utils"
 
 export default function UserProfile() {
   const { user } = useAuth()
+  const { profile, loading: profileLoading, error: profileError, refetch: refetchProfile } = useUserProfile()
+  const { stats, loading: statsLoading, refetch: refetchStats } = useUserStats()
+
+  if (profileLoading || statsLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (profileError || !profile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 dark:text-red-400 mb-4">Failed to load profile</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+      </div>
+    )
+  }
+
 
   const userStats = {
-    following: 234,
-    followers: 156,
-    likes: 1240,
-    saved: 89,
+    following: stats?.stats.following_count || 0,
+    followers: 0, // Users don't have followers in our model
+    likes: stats?.stats.likes_given || 0,
+    saved: stats?.stats.saved_artworks || 0,
+    orders: stats?.stats.orders_count || 0,
   }
 
   const savedArtworks = [
@@ -74,7 +110,7 @@ export default function UserProfile() {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
+    <div key={`profile-${profile.id}-${profile.profile_image}`} className="min-h-screen bg-gradient-to-br from-pastel-rose to-pastel-sage dark:bg-gray-900">
       {/* Header */}
       <header className="bg-white/95 dark:bg-slate-800/95 border-b border-slate-200 dark:border-slate-700 backdrop-blur-md">
         <div className="container mx-auto px-4 py-4">
@@ -100,19 +136,22 @@ export default function UserProfile() {
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row items-start gap-6">
               <Avatar className="w-32 h-32">
-                <AvatarImage src={user?.profile_image || "/placeholder.svg?height=128&width=128"} />
+                <AvatarImage src={getImageUrl(profile.profile_image)} />
                 <AvatarFallback className="text-2xl">
-                  {user?.first_name?.[0]}
-                  {user?.last_name?.[0]}
+                  {profile.first_name?.[0]}{profile.last_name?.[0]}
                 </AvatarFallback>
               </Avatar>
 
               <div className="flex-1">
                 <div className="flex items-center gap-4 mb-4">
-                  <h1 className="text-3xl font-bold">
-                    {user?.first_name} {user?.last_name}
-                  </h1>
-                  <EditProfileModal>
+                  <h1 className="text-3xl font-bold">{profile.full_name || profile.username}</h1>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                    {profile.user_type === 'artist' ? 'Artist' : 'Art Lover'}
+                  </Badge>
+                  <EditProfileModal onProfileUpdate={() => {
+                    refetchProfile()
+                    refetchStats()
+                  }}>
                     <Button variant="outline" size="sm">
                       <Edit className="w-4 h-4 mr-2" />
                       Edit Profile
@@ -120,28 +159,43 @@ export default function UserProfile() {
                   </EditProfileModal>
                 </div>
 
-                <div className="flex items-center gap-6 mb-4 text-sm text-slate-600 dark:text-slate-400">
-                  {user?.location && (
+                <div className="flex items-center gap-6 mb-4 text-sm text-muted-foreground">
+                  {profile.location && (
                     <div className="flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
-                      <span>{user.location}</span>
+                      <span>{profile.location}</span>
                     </div>
                   )}
                   <div className="flex items-center gap-1">
                     <Calendar className="w-4 h-4" />
-                    <span>Joined {new Date(user?.date_joined || "").toLocaleDateString()}</span>
+                    <span>Joined {new Date(profile.date_joined).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</span>
                   </div>
-                  {user?.website && (
+                  {profile.website && (
                     <div className="flex items-center gap-1">
                       <LinkIcon className="w-4 h-4" />
-                      <a href={user.website} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                        {user.website}
-                      </a>
+                      <span>{profile.website}</span>
                     </div>
                   )}
                 </div>
 
-                {user?.bio && <p className="text-slate-600 dark:text-slate-400 mb-4 max-w-2xl">{user.bio}</p>}
+                <p className="text-muted-foreground mb-4 max-w-2xl">
+                  {profile.bio || "Art enthusiast and collector passionate about supporting emerging artists."}
+                </p>
+
+                {/* Profile Completion */}
+                {stats?.profile_completion !== undefined && stats.profile_completion < 100 && (
+                  <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        Complete your profile
+                      </span>
+                      <span className="text-sm text-amber-600 dark:text-amber-400">
+                        {Math.round(stats.profile_completion)}%
+                      </span>
+                    </div>
+                    <Progress value={stats.profile_completion} className="h-2" />
+                  </div>
+                )}
 
                 <div className="flex gap-6">
                   <div className="text-center">
@@ -149,16 +203,25 @@ export default function UserProfile() {
                     <div className="text-sm text-slate-600 dark:text-slate-400">Following</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-xl">{userStats.followers}</div>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">Followers</div>
+                    <div className="font-bold text-xl flex items-center gap-1">
+                      <Heart className="w-4 h-4" />
+                      {userStats.likes}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Likes Given</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-xl">{userStats.likes}</div>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">Likes Given</div>
+                    <div className="font-bold text-xl flex items-center gap-1">
+                      <Bookmark className="w-4 h-4" />
+                      {userStats.saved}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Saved</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-xl">{userStats.saved}</div>
-                    <div className="text-sm text-slate-600 dark:text-slate-400">Saved</div>
+                    <div className="font-bold text-xl flex items-center gap-1">
+                      <ShoppingBag className="w-4 h-4" />
+                      {userStats.orders}
+                    </div>
+                    <div className="text-sm text-muted-foreground">Orders</div>
                   </div>
                 </div>
               </div>
