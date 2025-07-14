@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 import { UserMenu } from "@/components/user-menu"
 
-import { useAuth } from "@/hooks/useAuth"
 
 
 
