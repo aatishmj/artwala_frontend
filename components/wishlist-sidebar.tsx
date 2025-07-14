@@ -1,11 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { Heart, ShoppingCart, X } from "lucide-react"
+import { fetchWishlist } from "@/lib/api"
 
 interface WishlistItem {
   id?: number
@@ -17,13 +18,34 @@ interface WishlistItem {
 }
 
 interface WishlistSidebarProps {
-  wishlistItems: WishlistItem[]
   removeFromWishlist: (item: WishlistItem) => void
   addToCart: (item: WishlistItem) => void
 }
 
-export function WishlistSidebar({ wishlistItems, removeFromWishlist, addToCart }: WishlistSidebarProps) {
+export function WishlistSidebar({ removeFromWishlist, addToCart }: WishlistSidebarProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([])
+
+  useEffect(() => {
+    async function loadWishlist() {
+      try {
+        const data = await fetchWishlist()
+        const mapped = data.map((item: any) => ({
+          id: item.artwork.id,
+          name: item.artwork.title,
+          price: item.artwork.price,
+          image: item.artwork.image,
+        }))
+        setWishlistItems(mapped)
+      } catch (err) {
+        console.error("Error loading wishlist:", err)
+      }
+    }
+
+    if (isOpen) {
+      loadWishlist()
+    }
+  }, [isOpen])
 
   return (
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
@@ -83,9 +105,7 @@ export function WishlistSidebar({ wishlistItems, removeFromWishlist, addToCart }
                       <Button
                         size="sm"
                         className="bg-gradient-to-r from-stone-600 to-amber-700 hover:from-stone-700 hover:to-amber-800 text-white"
-                        onClick={() => {
-                          addToCart(item)
-                        }}
+                        onClick={() => addToCart(item)}
                       >
                         <ShoppingCart className="w-3 h-3 mr-1" />
                         Add to Cart

@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { UserMenu } from "@/components/user-menu"
+
 import {
   Search,
   Home,
@@ -114,10 +116,10 @@ export default function ExplorePage() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:to-purple-900/20">
       {/* Header */}
       <header className="bg-white/95 dark:bg-gray-800/95 border-b sticky top-0 z-50 backdrop-blur-md">
-        <div className="container mx-auto px-4 py-3">
+          <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg rounded-lg flex items-center justify-center">
                 <Palette className="w-5 h-5 text-white" />
               </div>
               <span className="font-bold text-lg">ARTWALA</span>
@@ -125,17 +127,14 @@ export default function ExplorePage() {
 
             <div className="flex-1 max-w-md mx-8">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input placeholder="Search artists, artworks..." className="pl-10" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input placeholder="Search artists, artworks..." className="pl-10 bg-white dark:bg-slate-700" />
               </div>
             </div>
 
             <div className="flex items-center gap-4">
               <ThemeToggle />
-              <Avatar className="w-8 h-8">
-                <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
+              <UserMenu />
             </div>
           </div>
         </div>
