@@ -34,14 +34,14 @@ export default function WishlistPage() {
     }
   }
 
-  const removeFromWishlist = async (artworkId: number) => {
+  const handleRemove = async (artworkId: number) => {
     try {
       await apiClient.removeFromWishlist(artworkId)
-      setWishlistItems((items) => items.filter((item) => item.artwork.id !== artworkId))
+      setWishlistItems(prev => prev.filter(item => item.artwork.id !== artworkId))
       toast.success("Removed from wishlist")
     } catch (error) {
       console.error("Failed to remove from wishlist:", error)
-      toast.error("Failed to remove from wishlist")
+      toast.error("Failed to remove item")
     }
   }
 
@@ -119,7 +119,7 @@ export default function WishlistPage() {
                       variant="secondary"
                       size="sm"
                       className="bg-white/90 hover:bg-white text-red-500 hover:text-red-600"
-                      onClick={() => removeFromWishlist(item.artwork.id)}
+                      onClick={() => handleRemove(item.artwork.id)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>

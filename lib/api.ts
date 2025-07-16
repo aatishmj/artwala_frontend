@@ -67,9 +67,22 @@ export interface RegisterData {
 
 export interface WishlistItem {
   id: number
-  artwork: Artwork
   added_on: string
+  artwork: {
+    id: number
+    title: string
+    description: string
+    price: number
+    category: string
+    image: string
+    artist: {
+      first_name: string
+      last_name: string
+      profile_image?: string
+    }
+  }
 }
+
 
 // Token management
 export const tokenManager = {
@@ -265,29 +278,6 @@ class ApiClient {
 
 
 
-  async getWishlist(): Promise<WishlistItem[]> {
-    return this.request<WishlistItem[]>("/api/wishlist/")
-  }
-
-  async addToWishlist(artworkId: number): Promise<WishlistItem> {
-    return this.request<WishlistItem>("/api/wishlist/", {
-      method: "POST",
-      body: JSON.stringify({ artwork_id: artworkId }),
-    })
-  }
-
-  async removeFromWishlist(artworkId: number): Promise<void> {
-    return this.request<void>(`/api/wishlist/${artworkId}/`, {
-      method: "DELETE",
-    })
-  }
-
-
-
-
-
-
-
   // Generic HTTP methods for hooks
   async get<T>(endpoint: string): Promise<{ data: T }> {
     const data = await this.request<T>(endpoint)
@@ -335,32 +325,19 @@ class ApiClient {
     return { data }
   }
 
+  async getWishlist(): Promise<WishlistItem[]> {
+  const { data } = await this.get<WishlistItem[]>("/api/wishlist/")
+  return data
 }
 
+async removeFromWishlist(artworkId: number): Promise<void> {
+  await this.delete(`/api/wishlist/${artworkId}/`)
+}
+
+async addToWishlist(artworkId: number): Promise<void> {
+  await this.post(`/api/wishlist/`, { artwork_id: artworkId })
+}
+
+}
 
 export const apiClient = new ApiClient()
-
-// utils/api.ts
-// utils/api.ts
-export async function fetchWishlist() {
-  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null
-
-  if (!token) throw new Error("No access token found")
-
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000"}/api/wishlist/`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include", // optional: include cookies if needed
-  })
-
-  if (!res.ok) {
-    const errorText = await res.text()
-    throw new Error(`Failed to fetch wishlist: ${res.status} - ${errorText}`)
-  }
-
-  return res.json()
-}
-
-
