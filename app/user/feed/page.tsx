@@ -1,5 +1,5 @@
 "use client"
-
+import { UserSidebar } from "@/components/side-menu"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
@@ -157,50 +157,10 @@ export default function UserFeed() {
 
       <div className="container mx-auto px-4 py-6">
         <div className="grid lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-24 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-              <CardContent className="p-4">
-                <nav className="space-y-2">
-                  <Link
-                    href="/user/feed"
-                    className="flex items-center gap-3 p-2 rounded-lg bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-700 dark:text-blue-300 shadow-sm"
-                  >
-                    <Home className="w-5 h-5" />
-                    <span className="font-medium">Feed</span>
-                  </Link>
-                  <Link
-                    href="/user/explore"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-                  >
-                    <Compass className="w-5 h-5" />
-                    <span>Explore</span>
-                  </Link>
-                  <Link
-                    href="/user/wishlist"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-                  >
-                    <Heart className="w-5 h-5" />
-                    <span>Wishlist</span>
-                  </Link>
-                  <Link
-                    href="/user/orders"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-                  >
-                    <ShoppingBag className="w-5 h-5" />
-                    <span>Orders</span>
-                  </Link>
-                  <Link
-                    href="/user/profile"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-                  >
-                    <User className="w-5 h-5" />
-                    <span>Profile</span>
-                  </Link>
-                </nav>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Sidebar */}          
+          <UserSidebar />
+
+
 
           {/* Main Feed */}
           <div className="lg:col-span-2 space-y-6">
