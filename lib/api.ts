@@ -335,6 +335,15 @@ class ApiClient {
     return { data }
   }
 
+  // Profile completion details
+  async getProfileCompletion(): Promise<any> {
+    return this.request("/api/profile/completion/")
+  }
+
+  // Artist recommendations
+  async getArtistRecommendations(): Promise<any> {
+    return this.request("/api/artists/recommendations/")
+  }
 }
 
 

@@ -18,6 +18,7 @@ import { Eye, Bookmark, Settings, Edit, MapPin, Calendar, LinkIcon, User, Heart,
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { EditProfileModal } from "@/components/edit-profile-modal"
+import { ProfileCompletionCard } from "@/components/profile-completion-card"
 import { useUserProfile, useUserStats, useAuth } from "@/hooks"
 import { getImageUrl } from "@/lib/utils"
 
@@ -181,21 +182,6 @@ export default function UserProfile() {
                   {profile.bio || "Art enthusiast and collector passionate about supporting emerging artists."}
                 </p>
 
-                {/* Profile Completion */}
-                {stats?.profile_completion !== undefined && stats.profile_completion < 100 && (
-                  <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                        Complete your profile
-                      </span>
-                      <span className="text-sm text-amber-600 dark:text-amber-400">
-                        {Math.round(stats.profile_completion)}%
-                      </span>
-                    </div>
-                    <Progress value={stats.profile_completion} className="h-2" />
-                  </div>
-                )}
-
                 <div className="flex gap-6">
                   <div className="text-center">
                     <div className="font-bold text-xl">{userStats.following}</div>
@@ -228,13 +214,17 @@ export default function UserProfile() {
           </CardContent>
         </Card>
 
-        {/* Profile Tabs */}
-        <Tabs defaultValue="saved" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="saved">Saved Artworks</TabsTrigger>
-            <TabsTrigger value="purchases">Purchase History</TabsTrigger>
-            <TabsTrigger value="following">Following</TabsTrigger>
-          </TabsList>
+        {/* Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            {/* Profile Tabs */}
+            <Tabs defaultValue="saved" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="saved">Saved Artworks</TabsTrigger>
+                <TabsTrigger value="purchases">Purchase History</TabsTrigger>
+                <TabsTrigger value="following">Following</TabsTrigger>
+              </TabsList>
 
           <TabsContent value="saved">
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -335,7 +325,7 @@ export default function UserProfile() {
                         <div className="text-slate-600 dark:text-slate-400">Followers</div>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" className="w-full bg-transparent">
+                    <Button variant="outline" size="sm" className="w-full">
                       Following
                     </Button>
                   </CardContent>
@@ -343,7 +333,14 @@ export default function UserProfile() {
               ))}
             </div>
           </TabsContent>
-        </Tabs>
+            </Tabs>
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
+            <ProfileCompletionCard />
+          </div>
+        </div>
       </div>
     </div>
   )

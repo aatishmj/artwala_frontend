@@ -189,17 +189,17 @@ export default function ArtistProfile() {
                 </p>
 
                 {/* Profile Completion */}
-                {stats?.profile_completion !== undefined && stats.profile_completion < 100 && (
+                {stats?.profile_completion !== undefined && stats.profile_completion.percentage < 100 && (
                   <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
                         Complete your profile
                       </span>
                       <span className="text-sm text-amber-600 dark:text-amber-400">
-                        {Math.round(stats.profile_completion)}%
+                        {Math.round(stats.profile_completion.percentage)}%
                       </span>
                     </div>
-                    <Progress value={stats.profile_completion} className="h-2" />
+                    <Progress value={stats.profile_completion.percentage} className="h-2" />
                   </div>
                 )}
 
@@ -259,7 +259,13 @@ export default function ArtistProfile() {
                     </div>
                     <div className="text-sm text-muted-foreground">Revenue</div>
                   </div>
+                  <div className="text-center">
+                    <div className="font-bold text-xl flex items-center gap-1">
+                      <Palette className="w-4 h-4" />
+                      {artistStats.artworks}
+                    </div>
                     <div className="text-sm text-muted-foreground">Artworks</div>
+                  </div>
                 </div>
               </div>
             </div>

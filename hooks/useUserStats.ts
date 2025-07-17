@@ -1,6 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/api';
 
+export interface ProfileCompletionField {
+  field: string;
+  label: string;
+}
+
+export interface ProfileCompletionData {
+  percentage: number;
+  completed_fields: ProfileCompletionField[];
+  missing_fields: ProfileCompletionField[];
+  total_fields: number;
+  completed_count: number;
+}
+
 export interface UserStats {
   user_id: number;
   username: string;
@@ -11,7 +24,7 @@ export interface UserStats {
   profile_image: string;
   date_joined: string;
   last_login: string;
-  profile_completion: number;
+  profile_completion: ProfileCompletionData;
   stats: {
     // Artist stats
     artworks_count?: number;
