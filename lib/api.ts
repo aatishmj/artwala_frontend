@@ -325,10 +325,21 @@ class ApiClient {
     return { data }
   }
 
+
   async getWishlist(): Promise<WishlistItem[]> {
   const { data } = await this.get<WishlistItem[]>("/api/wishlist/")
   return data
-}
+  }
+
+  // Profile completion details
+  async getProfileCompletion(): Promise<any> {
+    return this.request("/api/profile/completion/")
+  }
+
+  // Artist recommendations
+  async getArtistRecommendations(): Promise<any> {
+    return this.request("/api/artists/recommendations/")
+  }
 
 async removeFromWishlist(artworkId: number): Promise<void> {
   await this.delete(`/api/wishlist/${artworkId}/`)

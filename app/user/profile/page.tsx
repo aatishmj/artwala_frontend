@@ -10,6 +10,7 @@ import { Eye, Bookmark, Settings, Edit, MapPin, Calendar, LinkIcon, User, Heart,
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { EditProfileModal } from "@/components/edit-profile-modal"
+import { ProfileCompletionCard } from "@/components/profile-completion-card"
 import { useUserProfile, useUserStats, useAuth } from "@/hooks"
 import { getImageUrl } from "@/lib/utils"
 import { UserMenu } from "@/components/user-menu"
@@ -258,7 +259,7 @@ export default function UserProfile() {
                         <div className="text-slate-600 dark:text-slate-400">Followers</div>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm" className="w-full bg-transparent">
+                    <Button variant="outline" size="sm" className="w-full">
                       Following
                     </Button>
                   </CardContent>

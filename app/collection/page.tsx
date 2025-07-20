@@ -303,7 +303,7 @@ export default function CollectionPage() {
             </nav>
 
             <div className="flex items-center space-x-4">
-              <WishlistSidebar wishlistItems={wishlist} removeFromWishlist={removeFromWishlistWrapper} addToCart={addToCartWrapper} />
+              <WishlistSidebar removeFromWishlist={removeFromWishlistWrapper} addToCart={addToCartWrapper} />
               <CartSidebar cartItems={cartItemsForSidebar} updateQuantity={updateQuantity} removeFromCart={removeFromCart} />
             </div>
           </div>
