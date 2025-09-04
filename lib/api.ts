@@ -33,7 +33,8 @@ export interface Artwork {
   description: string
   price: string
   image: string
-  artist: {
+  // Backend currently returns artist as an id; future enhancement may expand to object
+  artist: number | {
     id: number
     username: string
     first_name: string
@@ -122,14 +123,15 @@ class ApiClient {
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`
     const accessToken = tokenManager.getAccessToken()
+    const isFormData = options.body instanceof FormData
 
     const config: RequestInit = {
+      ...options,
       headers: {
-        "Content-Type": "application/json",
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
         ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
         ...options.headers,
       },
-      ...options,
     }
 
     try {
@@ -158,11 +160,32 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+        // Try to parse error body if present
+        let errorData: any = {}
+        try {
+            // Only attempt to parse if content length isn't zero
+            if (response.status !== 204) {
+              errorData = await response.json()
+            }
+        } catch (_) { /* ignore parse errors */ }
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
       }
 
-      return response.json()
+      // DELETE / 204 No Content or empty body handling
+      if (response.status === 204) {
+        return {} as T
+      }
+      const contentType = response.headers.get('Content-Type') || ''
+      if (!contentType.includes('application/json')) {
+        // If no JSON, return empty object
+        return {} as T
+      }
+      // Safely parse JSON; if empty return {} so callers don't fail
+      try {
+        return await response.json()
+      } catch {
+        return {} as T
+      }
     } catch (error) {
       console.error("API request failed:", error)
       throw error
@@ -282,6 +305,34 @@ class ApiClient {
     })
   }
 
+  async createArtwork(form: FormData): Promise<Artwork> {
+    // Ensure required fields exist client-side
+    if (!form.get('title')) throw new Error('Title is required')
+    if (!form.get('image')) throw new Error('Primary image is required')
+    const { data } = await this.post<Artwork>("/api/artworks/", form)
+    return data
+  }
+
+  async getArtworks(params?: { limit?: number; offset?: number; ordering?: string; artist?: number }): Promise<Artwork[]> {
+    // Basic list fetch; backend currently returns all artworks ordered by -created_at
+    const query: string[] = []
+    if (params?.limit) query.push(`limit=${params.limit}`)
+    if (params?.offset) query.push(`offset=${params.offset}`)
+    if (params?.ordering) query.push(`ordering=${encodeURIComponent(params.ordering)}`)
+    if (params?.artist) query.push(`artist=${params.artist}`)
+    const qp = query.length ? `?${query.join('&')}` : ''
+    return this.request<Artwork[]>(`/api/artworks/${qp}`)
+  }
+
+  async updateArtwork(id: number, body: Partial<Pick<Artwork,'title'|'description'|'price'>>): Promise<Artwork> {
+    const { data } = await this.patch<Artwork>(`/api/artworks/${id}/`, body)
+    return data
+  }
+
+  async deleteArtwork(id: number): Promise<void> {
+    await this.delete(`/api/artworks/${id}/`)
+  }
+
 
 
 
@@ -300,14 +351,6 @@ class ApiClient {
       ...(body && { body: body instanceof FormData ? body : JSON.stringify(body) }),
       ...options,
     }
-    
-    // Don't set Content-Type for FormData
-    if (body instanceof FormData && config.headers) {
-      const headers = { ...config.headers }
-      delete (headers as any)['Content-Type']
-      config.headers = headers
-    }
-    
     const data = await this.request<T>(endpoint, config)
     return { data }
   }

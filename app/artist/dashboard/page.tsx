@@ -26,7 +26,8 @@ import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/user-menu"
-import { useAuth, useUserProfile, useUserStats, useArtistRecommendations } from "@/hooks"
+import { UploadArtworkModal } from "@/components/upload-artwork-modal"
+import { useAuth, useUserProfile, useUserStats, useArtistRecommendations, useArtworks } from "@/hooks"
 import { getImageUrl } from "@/lib/utils"
 
 export default function ArtistDashboard() {
@@ -34,6 +35,7 @@ export default function ArtistDashboard() {
   const { profile, loading: profileLoading, error: profileError } = useUserProfile()
   const { stats, loading: statsLoading, error: statsError } = useUserStats()
   const { recommendations, loading: recommendationsLoading } = useArtistRecommendations()
+  const { artworks, loading: artworksLoading, prependArtwork } = useArtworks({ limit: 6 })
 
   if (profileLoading || statsLoading) {
     return (
@@ -76,11 +78,8 @@ export default function ArtistDashboard() {
     { id: 3, artwork: "Digital Mandala", buyer: "Arjun P.", amount: "₹12,000", date: "1 week ago" },
   ]
 
-  const recentArtworks = [
-    { id: 1, title: "Morning Glory", views: 234, likes: 45, status: "Published" },
-    { id: 2, title: "Abstract Thoughts", views: 156, likes: 32, status: "Draft" },
-    { id: 3, title: "Nature's Call", views: 89, likes: 18, status: "Published" },
-  ]
+  // Use real artworks (latest) from API
+  const recentArtworks = artworks
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pastel-peach to-pastel-mint dark:bg-gray-900">
@@ -220,12 +219,14 @@ export default function ArtistDashboard() {
 
             {/* Quick Actions */}
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <Upload className="w-8 h-8 text-blue-500" />
-                  <div className="font-medium">Upload Artwork</div>
-                </CardContent>
-              </Card>
+              <UploadArtworkModal onUploaded={(art) => prependArtwork(art)}>
+                <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <Upload className="w-8 h-8 text-blue-500" />
+                    <div className="font-medium">Upload Artwork</div>
+                  </CardContent>
+                </Card>
+              </UploadArtworkModal>
               <Card className="cursor-pointer hover:shadow-md transition-shadow">
                 <CardContent className="p-4 flex items-center gap-3">
                   <Calendar className="w-8 h-8 text-purple-500" />
@@ -351,17 +352,20 @@ export default function ArtistDashboard() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
-                        {recentArtworks.map((artwork) => (
+                        {artworksLoading ? (
+                          <p className="text-sm text-muted-foreground">Loading artworks...</p>
+                        ) : recentArtworks.length === 0 ? (
+                          <p className="text-sm text-muted-foreground">No artworks yet. Upload your first!</p>
+                        ) : recentArtworks.map((artwork: any) => (
                           <div key={artwork.id} className="flex items-center justify-between">
                             <div>
                               <p className="font-medium">{artwork.title}</p>
                               <p className="text-sm text-muted-foreground">
-                                {artwork.views} views • {artwork.likes} likes
+                                {/* Placeholder metrics until backend provides */}
+                                {new Date(artwork.created_at).toLocaleDateString()}
                               </p>
                             </div>
-                            <Badge variant={artwork.status === "Published" ? "default" : "secondary"}>
-                              {artwork.status}
-                            </Badge>
+                            <Badge>{'Published'}</Badge>
                           </div>
                         ))}
                       </div>
@@ -410,28 +414,27 @@ export default function ArtistDashboard() {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {recentArtworks.map((artwork) => (
+                      {artworksLoading ? (
+                        <p className="text-sm text-muted-foreground">Loading artworks...</p>
+                      ) : recentArtworks.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No artworks yet. Use Upload Artwork to add one.</p>
+                      ) : recentArtworks.map((artwork: any) => (
                         <div key={artwork.id} className="flex items-center justify-between p-4 border rounded-lg">
                           <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 bg-gray-200 rounded-lg"></div>
+                            <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
+                              {artwork.image && <img src={artwork.image} alt={artwork.title} className="w-full h-full object-cover" />}
+                            </div>
                             <div>
                               <h4 className="font-medium">{artwork.title}</h4>
                               <p className="text-sm text-muted-foreground">
-                                {artwork.views} views • {artwork.likes} likes
+                                Added {new Date(artwork.created_at).toLocaleDateString()}
                               </p>
-                              <Badge variant={artwork.status === "Published" ? "default" : "secondary"} className="mt-1">
-                                {artwork.status}
-                              </Badge>
+                              <Badge className="mt-1">Published</Badge>
                             </div>
                           </div>
                           <div className="flex gap-2">
-                            <Button variant="outline" size="sm">
-                              Edit
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              View
-                              <ArrowUpRight className="w-4 h-4 ml-1" />
-                            </Button>
+                            <Button variant="outline" size="sm">Edit</Button>
+                            <Button variant="outline" size="sm">View<ArrowUpRight className="w-4 h-4 ml-1" /></Button>
                           </div>
                         </div>
                       ))}

@@ -1,432 +1,186 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import {
-  Search,
-  Filter,
-  BarChart3,
-  ShoppingBag,
-  Heart,
-  Eye,
-  Settings,
-  Palette,
-  MessageSquare,
-  Edit,
-  Trash2,
-  Plus,
-} from "lucide-react"
-import Link from "next/link"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { UploadArtworkModal } from "@/components/upload-artwork-modal"
-import { EditArtworkModal } from "@/components/edit-artwork-modal"
-import { UserMenu } from "@/components/user-menu"
+import React, { useState } from 'react'
+import Link from 'next/link'
+import { ArrowLeft, Plus, RefreshCcw, Pencil, Trash2 } from 'lucide-react'
+import { useArtworks, useUserProfile } from '@/hooks'
+import { UploadArtworkModal } from '@/components/upload-artwork-modal'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { getImageUrl } from '@/lib/utils'
+import { useToast } from '@/hooks/use-toast'
 
-export default function ArtistArtworksPage() {
-  const [artworks, setArtworks] = useState([
-    {
-      id: 1,
-      title: "Sunset Dreams",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "₹15,000",
-      likes: 234,
-      views: 1200,
-      status: "Published",
-      category: "Painting",
-      createdDate: "Dec 15, 2024",
-      description: "A beautiful sunset painting",
-    },
-    {
-      id: 2,
-      title: "Urban Rhythm",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "₹8,500",
-      likes: 156,
-      views: 890,
-      status: "Draft",
-      category: "Sculpture",
-      createdDate: "Dec 12, 2024",
-      description: "A modern urban sculpture",
-    },
-    {
-      id: 3,
-      title: "Digital Mandala",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "₹12,000",
-      likes: 89,
-      views: 567,
-      status: "Published",
-      category: "Digital Art",
-      createdDate: "Dec 10, 2024",
-      description: "A vibrant digital mandala",
-    },
-    {
-      id: 4,
-      title: "Morning Glory",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "₹18,000",
-      likes: 312,
-      views: 1456,
-      status: "Published",
-      category: "Photography",
-      createdDate: "Dec 8, 2024",
-      description: "A stunning morning glory photograph",
-    },
-  ])
+export default function MyArtworksPage() {
+  const { profile } = useUserProfile()
+  const { artworks, loading, error, refetch, prependArtwork, updateLocal, removeLocal } = useArtworks({ limit: 100, artistId: profile?.id, requireArtist: true })
+  const [view, setView] = useState<'grid' | 'list'>('grid')
+  const [editing, setEditing] = useState<any | null>(null)
+  const [editForm, setEditForm] = useState({ title: '', price: '', description: '' })
+  const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const { toast } = useToast()
 
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
-
-  const handleEditArtwork = (artwork: any) => {
-    // Update artwork logic
-    console.log("Updating artwork:", artwork)
+  const startEdit = (a: any) => {
+    setEditing(a)
+    setEditForm({ title: a.title || '', price: a.price || '', description: a.description || '' })
   }
 
-  const handleDeleteArtwork = (artworkId: number) => {
-    if (confirm("Are you sure you want to delete this artwork?")) {
-      setArtworks(artworks.filter((art) => art.id !== artworkId))
+  const submitEdit = async () => {
+    if (!editing) return
+    setSaving(true)
+    try {
+      const updated = await (await import('@/lib/api')).apiClient.updateArtwork(editing.id, {
+        title: editForm.title,
+        price: editForm.price,
+        description: editForm.description,
+      })
+      updateLocal(updated)
+      setEditing(null)
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const deleteArtwork = async (id: number) => {
+    if (!confirm('Delete this artwork?')) return
+    // Optimistic removal
+    const toRestore = artworks.find(a => a.id === id)
+    removeLocal(id)
+    setDeletingId(id)
+    try {
+      await (await import('@/lib/api')).apiClient.deleteArtwork(id)
+      toast({ title: 'Artwork deleted' })
+    } catch (e) {
+      console.error(e)
+      // Revert on failure
+      if (toRestore) prependArtwork(toRestore as any)
+      toast({ title: 'Delete failed', variant: 'destructive' })
+    } finally {
+      setDeletingId(null)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:to-purple-900/20">
-      {/* Header */}
-      <header className="bg-white/95 dark:bg-gray-800/95 border-b backdrop-blur-md">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
-                <Palette className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-bold text-lg">ARTWALA</span>
-              <Badge variant="secondary" className="ml-2">
-                Artist
-              </Badge>
+    <div className="min-h-screen bg-gradient-to-br from-pastel-peach to-pastel-mint dark:bg-gray-900 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-3">
+            <Link href="/artist/dashboard" className="text-sm text-muted-foreground hover:underline flex items-center">
+              <ArrowLeft className="w-4 h-4 mr-1" /> Back
             </Link>
-
-            <div className="flex items-center gap-4">
-              <ThemeToggle />
-              <Button variant="outline" size="sm">
-                <Eye className="w-4 h-4 mr-2" />
-                View Profile
+            <h1 className="text-3xl font-bold">My Artworks</h1>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button variant="outline" size="sm" onClick={refetch} disabled={loading}>
+              <RefreshCcw className="w-4 h-4 mr-1" /> {loading ? 'Refreshing...' : 'Refresh'}
+            </Button>
+            <UploadArtworkModal onUploaded={(a) => prependArtwork(a)}>
+              <Button size="sm" className="bg-gradient-to-r from-purple-500 to-pink-500">
+                <Plus className="w-4 h-4 mr-1" /> Upload Artwork
               </Button>
-              <UserMenu />
-            </div>
+            </UploadArtworkModal>
           </div>
         </div>
-      </header>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-6">
-              <CardContent className="p-4">
-                <div className="text-center mb-6">
-                  <Avatar className="w-20 h-20 mx-auto mb-3">
-                    <AvatarImage src="/placeholder.svg?height=80&width=80" />
-                    <AvatarFallback>PS</AvatarFallback>
-                  </Avatar>
-                  <h3 className="font-semibold">Priya Sharma</h3>
-                  <p className="text-sm text-muted-foreground">@priya_art</p>
-                </div>
-
-                <nav className="space-y-2">
-                  <Button variant="ghost" className="w-full justify-start" asChild>
-                    <Link href="/artist/dashboard">
-                      <BarChart3 className="w-4 h-4 mr-3" />
-                      Dashboard
-                    </Link>
-                  </Button>
-                  <Button variant="default" className="w-full justify-start" asChild>
-                    <Link href="/artist/artworks">
-                      <Palette className="w-4 h-4 mr-3" />
-                      My Artworks
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start" asChild>
-                    <Link href="/artist/orders">
-                      <ShoppingBag className="w-4 h-4 mr-3" />
-                      Orders
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start" asChild>
-                    <Link href="/artist/messages">
-                      <MessageSquare className="w-4 h-4 mr-3" />
-                      Messages
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start" asChild>
-                    <Link href="/artist/profile">
-                      <Settings className="w-4 h-4 mr-3" />
-                      Settings
-                    </Link>
-                  </Button>
-                </nav>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">My Artworks</h1>
-                <p className="text-muted-foreground">Manage and showcase your creative works</p>
-              </div>
-              <UploadArtworkModal>
-                <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Upload Artwork
-                </Button>
-              </UploadArtworkModal>
+        <Card>
+          <CardHeader className="pb-4">
+            <CardTitle>Your Portfolio</CardTitle>
+            <CardDescription>
+              {loading ? 'Loading...' : `${artworks.length} artwork${artworks.length !== 1 ? 's' : ''} uploaded`}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {error && <p className="text-red-600 mb-4 text-sm">{error}</p>}
+            {!loading && artworks.length === 0 && <p className="text-sm text-muted-foreground">You haven't uploaded any artworks yet.</p>}
+            <div className="flex justify-end mb-4 gap-2">
+              <Button variant={view === 'grid' ? 'default' : 'outline'} size="sm" onClick={() => setView('grid')}>Grid</Button>
+              <Button variant={view === 'list' ? 'default' : 'outline'} size="sm" onClick={() => setView('list')}>List</Button>
             </div>
-
-            {/* Filters and Search */}
-            <Card className="mb-6">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex-1">
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                      <Input placeholder="Search artworks..." className="pl-10" />
+            {view === 'grid' ? (
+              <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                {artworks.map(a => (
+                  <Card key={a.id} className="overflow-hidden group">
+                    <div className="aspect-[4/3] w-full bg-gray-200 dark:bg-gray-700 overflow-hidden">
+                      {a.image && <img src={getImageUrl(a.image)} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />}
                     </div>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    <Filter className="w-4 h-4 mr-2" />
-                    Filter
-                  </Button>
-                  <div className="flex border rounded-lg">
-                    <Button
-                      variant={viewMode === "grid" ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setViewMode("grid")}
-                    >
-                      Grid
-                    </Button>
-                    <Button
-                      variant={viewMode === "list" ? "default" : "ghost"}
-                      size="sm"
-                      onClick={() => setViewMode("list")}
-                    >
-                      List
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Artworks */}
-            <Tabs defaultValue="all" className="space-y-6">
-              <TabsList>
-                <TabsTrigger value="all">All ({artworks.length})</TabsTrigger>
-                <TabsTrigger value="published">
-                  Published ({artworks.filter((a) => a.status === "Published").length})
-                </TabsTrigger>
-                <TabsTrigger value="drafts">Drafts ({artworks.filter((a) => a.status === "Draft").length})</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="all">
-                {viewMode === "grid" ? (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {artworks.map((artwork) => (
-                      <Card key={artwork.id} className="group hover:shadow-lg transition-shadow overflow-hidden">
-                        <div className="relative">
-                          <img
-                            src={artwork.image || "/placeholder.svg"}
-                            alt={artwork.title}
-                            className="w-full h-48 object-cover"
-                          />
-                          <div className="absolute top-2 right-2">
-                            <Badge variant={artwork.status === "Published" ? "default" : "secondary"}>
-                              {artwork.status}
-                            </Badge>
-                          </div>
-                          <div className="absolute bottom-2 left-2 flex gap-2">
-                            <div className="bg-black/50 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-                              <Eye className="w-3 h-3" />
-                              {artwork.views}
-                            </div>
-                            <div className="bg-black/50 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-                              <Heart className="w-3 h-3" />
-                              {artwork.likes}
-                            </div>
+                    <CardContent className="p-4 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="font-semibold leading-tight line-clamp-2">{a.title}</h3>
+                        <div className="flex gap-2 items-center">
+                          <Badge className="shrink-0">Published</Badge>
+                          <button onClick={() => startEdit(a)} className="text-xs text-blue-600 hover:underline">Edit</button>
+                          <button disabled={deletingId===a.id} onClick={() => deleteArtwork(a.id)} className="text-xs text-red-600 hover:underline">
+                            {deletingId===a.id? 'Deleting...' : 'Delete'}
+                          </button>
+                        </div>
+                      </div>
+                      {a.price && <p className="text-sm font-medium">₹{a.price}</p>}
+                      <p className="text-xs text-muted-foreground">Added {new Date(a.created_at).toLocaleDateString()}</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {artworks.map(a => (
+                  <Card key={a.id} className="overflow-hidden">
+                    <CardContent className="p-4 flex gap-4">
+                      <div className="w-32 h-24 bg-gray-200 dark:bg-gray-700 rounded overflow-hidden shrink-0">
+                        {a.image && <img src={getImageUrl(a.image)} alt={a.title} className="w-full h-full object-cover" />}
+                      </div>
+                      <div className="flex-1 flex flex-col justify-between">
+                        <div>
+                          <h3 className="font-semibold">{a.title}</h3>
+                          <p className="text-xs text-muted-foreground mt-1">Added {new Date(a.created_at).toLocaleString()}</p>
+                        </div>
+                        <div className="flex items-center justify-between mt-2">
+                          {a.price && <span className="text-sm font-medium">₹{a.price}</span>}
+                          <div className="flex gap-3 items-center">
+                            <Badge>Published</Badge>
+                            <button onClick={() => startEdit(a)} className="text-xs text-blue-600 hover:underline">Edit</button>
+                            <button disabled={deletingId===a.id} onClick={() => deleteArtwork(a.id)} className="text-xs text-red-600 hover:underline">
+                              {deletingId===a.id? 'Deleting...' : 'Delete'}
+                            </button>
                           </div>
                         </div>
-                        <CardContent className="p-4">
-                          <h3 className="font-semibold mb-1">{artwork.title}</h3>
-                          <p className="text-sm text-muted-foreground mb-2">{artwork.category}</p>
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-green-600">{artwork.price}</span>
-                            <div className="flex gap-2">
-                              <EditArtworkModal
-                                artwork={{
-                                  id: artwork.id,
-                                  title: artwork.title,
-                                  description: artwork.description || "",
-                                  price: artwork.price.replace("₹", ""),
-                                  category: artwork.category,
-                                  medium: "",
-                                  dimensions: "",
-                                  tags: [],
-                                  isForSale: true,
-                                  isCommissionable: false,
-                                }}
-                                onSave={handleEditArtwork}
-                              >
-                                <Button variant="outline" size="sm">
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                              </EditArtworkModal>
-                              <Button variant="outline" size="sm" onClick={() => handleDeleteArtwork(artwork.id)}>
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {artworks.map((artwork) => (
-                      <Card key={artwork.id} className="hover:shadow-lg transition-shadow">
-                        <CardContent className="p-4">
-                          <div className="flex items-center gap-4">
-                            <img
-                              src={artwork.image || "/placeholder.svg"}
-                              alt={artwork.title}
-                              className="w-20 h-20 rounded-lg object-cover"
-                            />
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-2">
-                                <h3 className="font-semibold text-lg">{artwork.title}</h3>
-                                <Badge variant={artwork.status === "Published" ? "default" : "secondary"}>
-                                  {artwork.status}
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-6 text-sm text-muted-foreground mb-2">
-                                <span>{artwork.category}</span>
-                                <span>Created {artwork.createdDate}</span>
-                                <span className="flex items-center gap-1">
-                                  <Eye className="w-4 h-4" />
-                                  {artwork.views}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                  <Heart className="w-4 h-4" />
-                                  {artwork.likes}
-                                </span>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <span className="font-bold text-green-600">{artwork.price}</span>
-                                <div className="flex gap-2">
-                                  <Button variant="outline" size="sm">
-                                    <Edit className="w-4 h-4 mr-2" />
-                                    Edit
-                                  </Button>
-                                  <Button variant="outline" size="sm">
-                                    <Eye className="w-4 h-4 mr-2" />
-                                    View
-                                  </Button>
-                                  <Button variant="outline" size="sm">
-                                    <Trash2 className="w-4 h-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="published">
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {artworks
-                    .filter((artwork) => artwork.status === "Published")
-                    .map((artwork) => (
-                      <Card key={artwork.id} className="group hover:shadow-lg transition-shadow overflow-hidden">
-                        <div className="relative">
-                          <img
-                            src={artwork.image || "/placeholder.svg"}
-                            alt={artwork.title}
-                            className="w-full h-48 object-cover"
-                          />
-                          <div className="absolute bottom-2 left-2 flex gap-2">
-                            <div className="bg-black/50 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-                              <Eye className="w-3 h-3" />
-                              {artwork.views}
-                            </div>
-                            <div className="bg-black/50 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-                              <Heart className="w-3 h-3" />
-                              {artwork.likes}
-                            </div>
-                          </div>
-                        </div>
-                        <CardContent className="p-4">
-                          <h3 className="font-semibold mb-1">{artwork.title}</h3>
-                          <p className="text-sm text-muted-foreground mb-2">{artwork.category}</p>
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-green-600">{artwork.price}</span>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button variant="outline" size="sm">
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="drafts">
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {artworks
-                    .filter((artwork) => artwork.status === "Draft")
-                    .map((artwork) => (
-                      <Card key={artwork.id} className="group hover:shadow-lg transition-shadow overflow-hidden">
-                        <div className="relative">
-                          <img
-                            src={artwork.image || "/placeholder.svg"}
-                            alt={artwork.title}
-                            className="w-full h-48 object-cover opacity-75"
-                          />
-                          <div className="absolute top-2 right-2">
-                            <Badge variant="secondary">Draft</Badge>
-                          </div>
-                        </div>
-                        <CardContent className="p-4">
-                          <h3 className="font-semibold mb-1">{artwork.title}</h3>
-                          <p className="text-sm text-muted-foreground mb-2">{artwork.category}</p>
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-green-600">{artwork.price}</span>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button size="sm" className="bg-gradient-to-r from-purple-500 to-pink-500">
-                                Publish
-                              </Button>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                </div>
-              </TabsContent>
-            </Tabs>
-          </div>
-        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        <Dialog open={!!editing} onOpenChange={(o)=> !o && setEditing(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Edit Artwork</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Title</label>
+                <Input value={editForm.title} onChange={e=>setEditForm(f=>({...f,title:e.target.value}))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Price (₹)</label>
+                <Input type="number" value={editForm.price} onChange={e=>setEditForm(f=>({...f,price:e.target.value}))} />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Description</label>
+                <textarea className="w-full border rounded p-2 text-sm" rows={4} value={editForm.description} onChange={e=>setEditForm(f=>({...f,description:e.target.value}))} />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" size="sm" onClick={()=>setEditing(null)}>Cancel</Button>
+                <Button size="sm" disabled={saving} onClick={submitEdit}>{saving? 'Saving...' : 'Save'}</Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
