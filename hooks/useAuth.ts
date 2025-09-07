@@ -1,14 +1,14 @@
 "use client"
 
 import React, { useState, useEffect, createContext, useContext, type ReactNode } from "react"
-import { apiClient, tokenManager, type User, type LoginData, type RegisterData } from "@/lib/api"
+import { apiClient, tokenManager, type User, type LoginData, type RegisterData, type AuthResponse } from "@/lib/api"
 
 interface AuthContextType {
   user: User | null
   loading: boolean
-  login: (data: LoginData) => Promise<void>
-  register: (data: RegisterData) => Promise<void>
-  logout: () => void
+  login: (data: LoginData) => Promise<AuthResponse>
+  register: (data: RegisterData) => Promise<AuthResponse>
+  logout: () => Promise<void>
   updateProfile: (data: Partial<User>) => Promise<void>
   isAuthenticated: boolean
 }
@@ -29,25 +29,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const accessToken = tokenManager.getAccessToken()
 
       if (storedUser && accessToken) {
-        // Verify token is still valid
-        const isValid = await apiClient.verifyToken()
-        if (isValid) {
-          setUser(storedUser)
-        } else {
-          // Token invalid, try to get fresh user data
-          try {
-            const freshUser = await apiClient.getProfile()
-            setUser(freshUser)
-            tokenManager.setUser(freshUser)
-          } catch {
-            // Failed to get user, clear tokens
-            tokenManager.clearTokens()
-          }
+        // Try to get fresh user data directly instead of verifying token first
+        try {
+          const freshUser = await apiClient.getProfile()
+          setUser(freshUser)
+          tokenManager.setUser(freshUser)
+        } catch (error) {
+          console.log("Profile fetch failed, clearing auth state")
+          // If profile fetch fails, clear everything to avoid infinite loops
+          tokenManager.clearTokens()
+          setUser(null)
         }
+      } else {
+        // No stored auth data
+        setUser(null)
       }
     } catch (error) {
       console.error("Auth initialization failed:", error)
       tokenManager.clearTokens()
+      setUser(null)
     } finally {
       setLoading(false)
     }
@@ -59,6 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tokenManager.setTokens(response.access, response.refresh)
       tokenManager.setUser(response.user)
       setUser(response.user)
+      return response
     } catch (error) {
       console.error("Login failed:", error)
       throw error
@@ -71,15 +72,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       tokenManager.setTokens(response.access, response.refresh)
       tokenManager.setUser(response.user)
       setUser(response.user)
+      return response
     } catch (error) {
       console.error("Registration failed:", error)
       throw error
     }
   }
 
-  const logout = () => {
-    tokenManager.clearTokens()
-    setUser(null)
+  const logout = async () => {
+    try {
+      await apiClient.logout()
+    } catch (error) {
+      console.error("Logout failed:", error)
+    } finally {
+      setUser(null)
+      tokenManager.clearTokens()
+    }
   }
 
   const updateProfile = async (data: Partial<User>) => {

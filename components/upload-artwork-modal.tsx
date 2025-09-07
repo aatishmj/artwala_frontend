@@ -3,6 +3,9 @@
 import type React from "react"
 
 import { useState } from "react"
+import { apiClient } from "@/lib/api"
+import { useUserStats } from "@/hooks/useUserStats"
+import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,9 +17,10 @@ import { Upload, X, Plus, ImageIcon } from "lucide-react"
 
 interface UploadArtworkModalProps {
   children: React.ReactNode
+  onUploaded?: (artwork: any) => void
 }
 
-export function UploadArtworkModal({ children }: UploadArtworkModalProps) {
+export function UploadArtworkModal({ children, onUploaded }: UploadArtworkModalProps) {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -31,6 +35,11 @@ export function UploadArtworkModal({ children }: UploadArtworkModalProps) {
   const [images, setImages] = useState<File[]>([])
   const [newTag, setNewTag] = useState("")
   const [isOpen, setIsOpen] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const { refetch: refetchStats } = useUserStats()
+  const { toast } = useToast()
+  const [videoFile, setVideoFile] = useState<File | null>(null)
 
   const categories = [
     "Painting",
@@ -73,12 +82,48 @@ export function UploadArtworkModal({ children }: UploadArtworkModalProps) {
     })
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Handle artwork upload logic here
-    console.log("Artwork data:", formData)
-    console.log("Images:", images)
-    setIsOpen(false)
+    setError(null)
+    if (!formData.title.trim()) return setError('Title is required')
+    if (images.length === 0) return setError('At least one image is required')
+    try {
+      setSubmitting(true)
+      const fd = new FormData()
+      fd.append('title', formData.title)
+  fd.append('description', formData.description || '')
+  fd.append('price', formData.price ? formData.price : '0')
+      fd.append('stock', '1')
+      fd.append('image', images[0]) // MVP only first image
+      if (videoFile) fd.append('video', videoFile)
+  const artwork = await apiClient.createArtwork(fd)
+      toast({ title: 'Artwork uploaded', description: `"${artwork.title}" is now live.` })
+      // Refresh stats (artworks_count)
+      refetchStats()
+  // Optimistic insert into artworks list if callback provided
+  onUploaded?.(artwork)
+      // Reset and close
+      setFormData({
+        title: "",
+        description: "",
+        price: "",
+        category: "",
+        medium: "",
+        dimensions: "",
+        tags: [],
+        isForSale: true,
+        isCommissionable: false,
+      })
+      setImages([])
+      setVideoFile(null)
+      setIsOpen(false)
+    } catch (err: any) {
+      console.error(err)
+      setError(err?.message || 'Upload failed')
+      toast({ title: 'Upload failed', description: 'Could not upload artwork', variant: 'destructive' })
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -132,6 +177,8 @@ export function UploadArtworkModal({ children }: UploadArtworkModalProps) {
               </div>
             )}
           </div>
+
+          {error && <p className="text-sm text-red-600">{error}</p>}
 
           {/* Basic Information */}
           <div className="grid grid-cols-2 gap-4">
@@ -256,11 +303,11 @@ export function UploadArtworkModal({ children }: UploadArtworkModalProps) {
           </div>
 
           <div className="flex gap-3 pt-4">
-            <Button type="submit" className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500">
+            <Button disabled={submitting} type="submit" className="flex-1 bg-gradient-to-r from-purple-500 to-pink-500">
               <Upload className="w-4 h-4 mr-2" />
-              Upload Artwork
+              {submitting ? 'Uploading...' : 'Upload Artwork'}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+            <Button disabled={submitting} type="button" variant="outline" onClick={() => setIsOpen(false)}>
               Cancel
             </Button>
           </div>

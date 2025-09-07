@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Search, Send, Paperclip, ImageIcon, FileText, Smile, Phone, Video, Info, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { ProtectedRoute } from "@/components/protected-route"
 
 export default function MessagesPage() {
   const [selectedChat, setSelectedChat] = useState<number | null>(1)
@@ -103,19 +104,20 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 border-b px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/user/feed">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-          </Link>
-          <h1 className="text-xl font-semibold">Messages</h1>
-        </div>
-        <ThemeToggle />
-      </header>
+    <ProtectedRoute>
+      <div className="h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+        {/* Header */}
+        <header className="bg-white dark:bg-gray-800 border-b px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/user/feed">
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="w-4 h-4" />
+              </Button>
+            </Link>
+            <h1 className="text-xl font-semibold">Messages</h1>
+          </div>
+          <ThemeToggle />
+        </header>
 
       <div className="flex-1 flex overflow-hidden">
         {/* Conversations List */}
@@ -262,5 +264,6 @@ export default function MessagesPage() {
         )}
       </div>
     </div>
+    </ProtectedRoute>
   )
 }

@@ -54,7 +54,7 @@ export function UserMenu() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/user/saved">
+              <Link href="/user/wishlist">
                 <Heart className="mr-2 h-4 w-4" />
                 <span>Wishlist</span>
               </Link>
@@ -93,7 +93,7 @@ export function UserMenu() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link href="/messages">
+              <Link href="/artist/messages">
                 <MessageCircle className="mr-2 h-4 w-4" />
                 <span>Messages</span>
               </Link>
@@ -101,9 +101,11 @@ export function UserMenu() {
           </>
         )}
 
-        <DropdownMenuItem>
-          <Settings className="mr-2 h-4 w-4" />
-          <span>Settings</span>
+        <DropdownMenuItem asChild>
+          <Link href="/settings">
+            <Settings className="mr-2 h-4 w-4" />
+            <span>Settings</span>
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>

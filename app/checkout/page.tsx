@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ProtectedRoute } from "@/components/protected-route"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -37,8 +38,15 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [agreedToTerms, setAgreedToTerms] = useState(false)
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target
+    setFormData((prev) => ({
+      ...prev,
+      [id]: value,
+    }))
+  }
+
+  const handleSelectChange = (id: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
       [id]: value,
@@ -84,7 +92,8 @@ export default function CheckoutPage() {
   const total = subtotal + shipping + tax
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50 to-yellow-50">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-amber-50 to-yellow-50">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-200">
         <div className="container mx-auto px-4 py-4">
@@ -238,7 +247,7 @@ export default function CheckoutPage() {
                     </Label>
                     <Select
                       value={formData.state}
-                      onValueChange={(value) => handleInputChange({ target: { id: "state", value } })}
+                      onValueChange={(value) => handleSelectChange("state", value)}
                     >
                       <SelectTrigger className="border-stone-200">
                         <SelectValue placeholder="Select state" />
@@ -400,7 +409,7 @@ export default function CheckoutPage() {
                         </Label>
                         <Select
                           value={formData.bank}
-                          onValueChange={(value) => handleInputChange({ target: { id: "bank", value } })}
+                          onValueChange={(value) => handleSelectChange("bank", value)}
                         >
                           <SelectTrigger className="border-stone-200">
                             <SelectValue placeholder="Choose your bank" />
@@ -429,7 +438,11 @@ export default function CheckoutPage() {
                 </RadioGroup>
 
                 <div className="flex items-center space-x-2 pt-4">
-                  <Checkbox id="terms" checked={agreedToTerms} onCheckedChange={setAgreedToTerms} />
+                  <Checkbox 
+                    id="terms" 
+                    checked={agreedToTerms} 
+                    onCheckedChange={(checked) => setAgreedToTerms(checked === true)} 
+                  />
                   <Label htmlFor="terms" className="text-sm text-stone-700">
                     I agree to the{" "}
                     <Link href="#" className="text-amber-700 hover:underline">
@@ -532,5 +545,6 @@ export default function CheckoutPage() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   )
 }
