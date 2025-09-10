@@ -68,7 +68,6 @@ export interface RegisterData {
 
 export interface WishlistItem {
   id: number
-  artwork: Artwork
   added_on: string
   artwork: {
     id: number
@@ -392,6 +391,12 @@ class ApiClient {
     return { data }
   }
 
+
+  async getWishlist(): Promise<WishlistItem[]> {
+  const { data } = await this.get<WishlistItem[]>("/api/wishlist/")
+  return data
+  }
+
   // Profile completion details
   async getProfileCompletion(): Promise<any> {
     return this.request("/api/profile/completion/")
@@ -401,8 +406,16 @@ class ApiClient {
   async getArtistRecommendations(): Promise<any> {
     return this.request("/api/artists/recommendations/")
   }
+
+async removeFromWishlist(artworkId: number): Promise<void> {
+  await this.delete(`/api/wishlist/${artworkId}/`)
 }
 
+async addToWishlist(artworkId: number): Promise<void> {
+  await this.post(`/api/wishlist/`, { artwork_id: artworkId })
+}
+
+}
 
 export const apiClient = new ApiClient()
 
