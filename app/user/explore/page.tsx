@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { UserMenu } from "@/components/user-menu"
+import { UserSidebar } from "@/components/side-menu"
 
 import {
   Search,
@@ -143,49 +144,7 @@ export default function ExplorePage() {
       <div className="container mx-auto px-4 py-6">
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-24">
-              <CardContent className="p-4">
-                <nav className="space-y-2">
-                  <Link
-                    href="/user/feed"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <Home className="w-5 h-5" />
-                    <span>Feed</span>
-                  </Link>
-                  <Link
-                    href="/user/explore"
-                    className="flex items-center gap-3 p-2 rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 shadow-sm"
-                  >
-                    <Compass className="w-5 h-5" />
-                    <span className="font-medium">Explore</span>
-                  </Link>
-                  <Link
-                    href="/user/saved"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <Bookmark className="w-5 h-5" />
-                    <span>Saved</span>
-                  </Link>
-                  <Link
-                    href="/user/orders"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <ShoppingBag className="w-5 h-5" />
-                    <span>Orders</span>
-                  </Link>
-                  <Link
-                    href="/user/profile"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <User className="w-5 h-5" />
-                    <span>Profile</span>
-                  </Link>
-                </nav>
-              </CardContent>
-            </Card>
-          </div>
+          <UserSidebar/>
 
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">

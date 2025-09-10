@@ -70,7 +70,21 @@ export interface WishlistItem {
   id: number
   artwork: Artwork
   added_on: string
+  artwork: {
+    id: number
+    title: string
+    description: string
+    price: number
+    category: string
+    image: string
+    artist: {
+      first_name: string
+      last_name: string
+      profile_image?: string
+    }
+  }
 }
+
 
 // Token management
 export const tokenManager = {
