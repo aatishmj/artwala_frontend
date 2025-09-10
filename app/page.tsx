@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge"
 import { Palette, Users, Heart, Star, ArrowRight, Brush, Sparkles } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useArtworks } from "@/hooks"
+import { ArtworkCard } from "@/components/artwork-card"
 
 export default function HomePage() {
   const [selectedLogin, setSelectedLogin] = useState<"user" | "artist" | null>(null)
@@ -34,6 +36,9 @@ export default function HomePage() {
             </Button>
             <Button variant="outline" size="sm" asChild>
               <Link href="/community">Join Community</Link>
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/feed">Explore</Link>
             </Button>
             <Button variant="outline" size="sm" asChild>
               <Link href="/auth/login">Login</Link>
@@ -90,6 +95,17 @@ export default function HomePage() {
             </Card>
           </div>
         </div>
+      </section>
+
+      {/* Latest Artworks (Dynamic) */}
+      <section className="container mx-auto px-4 py-16">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-3xl font-bold">Latest Artworks</h2>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/feed">View All</Link>
+          </Button>
+        </div>
+        <HomeFeedStrip />
       </section>
 
       {/* Login Options */}
@@ -173,6 +189,11 @@ export default function HomePage() {
                 <Button className="w-full bg-gradient-to-r from-pink-600 to-orange-600 hover:from-pink-700 hover:to-orange-700">
                   Explore Art
                   <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </Link>
+              <Link href="/feed" className="block mt-2">
+                <Button variant="outline" className="w-full">
+                  Browse Feed (no login)
                 </Button>
               </Link>
             </CardContent>
@@ -298,6 +319,22 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+    </div>
+  )
+}
+
+function HomeFeedStrip() {
+  const { artworks, loading, error } = useArtworks({ limit: 8 })
+  if (error) {
+    return <p className="text-sm text-red-600">{error}</p>
+  }
+  return (
+    <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+      {loading
+        ? Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="animate-pulse h-64 bg-gray-200 dark:bg-gray-800 rounded" />
+          ))
+        : artworks.map((a) => <ArtworkCard key={a.id} artwork={a} />)}
     </div>
   )
 }

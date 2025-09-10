@@ -300,8 +300,10 @@ class ApiClient {
   }
 
   async removeFromWishlist(artworkId: number): Promise<void> {
-    return this.request<void>(`/api/wishlist/${artworkId}/`, {
+    // Backend expects DELETE to /api/wishlist/ with JSON body { artwork_id }
+    return this.request<void>(`/api/wishlist/`, {
       method: "DELETE",
+      body: JSON.stringify({ artwork_id: artworkId }),
     })
   }
 
@@ -331,6 +333,33 @@ class ApiClient {
 
   async deleteArtwork(id: number): Promise<void> {
     await this.delete(`/api/artworks/${id}/`)
+  }
+
+  // Engagement
+  async likeArtwork(artworkId: number): Promise<{ id: number } | any> {
+    return this.request(`/api/like/`, {
+      method: "POST",
+      body: JSON.stringify({ artwork: artworkId }),
+    })
+  }
+
+  async followArtist(artistId: number): Promise<{ id: number } | any> {
+    return this.request(`/api/follow/`, {
+      method: "POST",
+      body: JSON.stringify({ following: artistId }),
+    })
+  }
+
+  // Orders
+  async createOrder(artworkId: number, quantity: number = 1): Promise<{ id: number } | any> {
+    return this.request(`/api/orders/`, {
+      method: "POST",
+      body: JSON.stringify({ artwork: artworkId, quantity }),
+    })
+  }
+
+  async getArtwork(id: number): Promise<Artwork> {
+    return this.request<Artwork>(`/api/artworks/${id}/`)
   }
 
 
@@ -399,7 +428,7 @@ export async function fetchWishlist() {
 
   if (!token) throw new Error("No access token found")
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000"}/api/wishlist/`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/api/wishlist/`, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",

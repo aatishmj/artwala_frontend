@@ -12,9 +12,10 @@ import { useRouter } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/user-menu"
 import { StoryViewer } from "@/components/story-viewer"
-import { CommentSection } from "@/components/comment-section"
 import { ShareModal } from "@/components/share-modal"
-import { apiClient } from "@/lib/api"
+import { apiClient, tokenManager } from "@/lib/api"
+import { useArtworks } from "@/hooks"
+import { getImageUrl } from "@/lib/utils"
 import { toast } from "sonner"
 
 export default function UserFeed() {
@@ -22,110 +23,124 @@ export default function UserFeed() {
   const [wishlistPosts, setWishlistPosts] = useState<Set<number>>(new Set())
   const [followedArtists, setFollowedArtists] = useState<Set<number>>(new Set())
   const router = useRouter()
+  const { artworks, loading, error } = useArtworks({ limit: 24 })
 
-  const toggleLike = (postId: number) => {
-    const newLiked = new Set(likedPosts)
-    if (newLiked.has(postId)) {
-      newLiked.delete(postId)
-    } else {
-      newLiked.add(postId)
+  const toggleLike = async (artworkId: number) => {
+    // Optimistic like; requires auth
+    const isAuthed = !!tokenManager.getAccessToken()
+    if (!isAuthed) {
+      router.push('/auth/login')
+      return
     }
-    setLikedPosts(newLiked)
+    const next = new Set(likedPosts)
+    const wasLiked = next.has(artworkId)
+    if (wasLiked) {
+      // Backend has no unlike endpoint yet; keep UI only
+      next.delete(artworkId)
+      setLikedPosts(next)
+      return
+    }
+    next.add(artworkId)
+    setLikedPosts(next)
+    try {
+      await apiClient.likeArtwork(artworkId)
+    } catch (e: any) {
+      // rollback on failure
+      const rollback = new Set(likedPosts)
+      if (!wasLiked) rollback.delete(artworkId)
+      setLikedPosts(rollback)
+      toast.error(e?.message || 'Failed to like')
+    }
   }
 
   const toggleWishlist = async (artworkId: number) => {
+    const isAuthed = !!tokenManager.getAccessToken()
+    if (!isAuthed) {
+      router.push('/auth/login')
+      return
+    }
     try {
-      const newWishlist = new Set(wishlistPosts)
-      if (newWishlist.has(artworkId)) {
+      const next = new Set(wishlistPosts)
+      if (next.has(artworkId)) {
         await apiClient.removeFromWishlist(artworkId)
-        newWishlist.delete(artworkId)
+        next.delete(artworkId)
         toast.success("Removed from wishlist")
       } else {
         await apiClient.addToWishlist(artworkId)
-        newWishlist.add(artworkId)
+        next.add(artworkId)
         toast.success("Added to wishlist")
       }
-      setWishlistPosts(newWishlist)
-    } catch (error) {
-      console.error("Failed to update wishlist:", error)
-      toast.error("Failed to update wishlist")
+      setWishlistPosts(next)
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to update wishlist")
     }
   }
 
-  const toggleFollow = (artistId: number) => {
-    const newFollowed = new Set(followedArtists)
-    if (newFollowed.has(artistId)) {
-      newFollowed.delete(artistId)
-    } else {
-      newFollowed.add(artistId)
+  const toggleFollow = async (artistId?: number) => {
+    if (!artistId) return
+    const isAuthed = !!tokenManager.getAccessToken()
+    if (!isAuthed) { router.push('/auth/login'); return }
+    const next = new Set(followedArtists)
+    const wasFollowing = next.has(artistId)
+    if (wasFollowing) {
+      // No unfollow endpoint yet; only UI toggle
+      next.delete(artistId)
+      setFollowedArtists(next)
+      return
     }
-    setFollowedArtists(newFollowed)
+    next.add(artistId)
+    setFollowedArtists(next)
+    try {
+      await apiClient.followArtist(artistId)
+      toast.success('Following artist')
+    } catch (e: any) {
+      const rollback = new Set(followedArtists)
+      if (!wasFollowing) rollback.delete(artistId)
+      setFollowedArtists(rollback)
+      toast.error(e?.message || 'Failed to follow')
+    }
   }
 
-  const handleBuyNow = (artworkId: number, price: string) => {
-    router.push(`/payment?artwork=${artworkId}&price=${price}`)
+  const handleBuyNow = async (artworkId: number, price: string) => {
+    const isAuthed = !!tokenManager.getAccessToken()
+    if (!isAuthed) { router.push('/auth/login'); return }
+    // Create a backend order then route to payment UI (still simulated)
+    try {
+      await apiClient.createOrder(artworkId, 1)
+      router.push(`/payment?artwork=${artworkId}&price=${price}`)
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to start order')
+    }
   }
 
-  const handleArtistClick = (artistId: number) => {
+  const handleArtistClick = (artistId?: number) => {
+    if (!artistId) return
     router.push(`/artist/${artistId}`)
   }
 
-  const posts = [
-    {
-      id: 1,
-      artist: {
-        id: 1,
-        name: "Priya Sharma",
-        username: "@priya_art",
-        avatar: "/placeholder.svg?height=40&width=40",
-        verified: true,
-      },
-      image: "/placeholder.svg?height=400&width=400",
-      title: "Sunset Dreams",
-      description: "Oil on canvas, inspired by the golden hour at Marina Beach",
-      likes: 234,
-      comments: 18,
-      price: "15000",
-      category: "Painting",
-      timeAgo: "2h",
+  // Map API artworks -> UI posts
+  const posts = artworks.map((a) => ({
+    id: a.id,
+    artist: {
+      id: typeof a.artist === "number" ? a.artist : a.artist?.id,
+      name:
+        typeof a.artist === "number"
+          ? `Artist ${a.artist}`
+          : `${(a as any).artist?.first_name || ""} ${(a as any).artist?.last_name || ""}`.trim() ||
+            (typeof a.artist !== "number" ? (a as any).artist?.username : `artist_${a.artist}`),
+      username: typeof a.artist === "number" ? `@artist${a.artist}` : `@${(a as any).artist?.username || "artist"}`,
+      avatar: "/placeholder.svg?height=40&width=40",
+      verified: false,
     },
-    {
-      id: 2,
-      artist: {
-        id: 2,
-        name: "Arjun Patel",
-        username: "@arjun_sculpts",
-        avatar: "/placeholder.svg?height=40&width=40",
-        verified: false,
-      },
-      image: "/placeholder.svg?height=400&width=400",
-      title: "Urban Rhythm",
-      description: "Bronze sculpture capturing the essence of city life",
-      likes: 156,
-      comments: 12,
-      price: "45000",
-      category: "Sculpture",
-      timeAgo: "4h",
-    },
-    {
-      id: 3,
-      artist: {
-        id: 3,
-        name: "Maya Singh",
-        username: "@maya_digital",
-        avatar: "/placeholder.svg?height=40&width=40",
-        verified: true,
-      },
-      image: "/placeholder.svg?height=400&width=400",
-      title: "Digital Mandala",
-      description: "Contemporary digital art blending traditional patterns",
-      likes: 89,
-      comments: 7,
-      price: "8500",
-      category: "Digital Art",
-      timeAgo: "6h",
-    },
-  ]
+    image: getImageUrl(a.image),
+    title: a.title,
+    description: a.description,
+    likes: 0,
+    comments: 0,
+    price: a.price,
+    category: "Artwork",
+    timeAgo: new Date(a.created_at).toLocaleString(),
+  }))
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
@@ -142,7 +157,7 @@ export default function UserFeed() {
 
             <div className="flex-1 max-w-md mx-8">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
                 <Input placeholder="Search artists, artworks..." className="pl-10 bg-white dark:bg-slate-700" />
               </div>
             </div>
@@ -169,31 +184,19 @@ export default function UserFeed() {
                     <Home className="w-5 h-5" />
                     <span className="font-medium">Feed</span>
                   </Link>
-                  <Link
-                    href="/user/explore"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-                  >
+                  <Link href="/user/explore" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                     <Compass className="w-5 h-5" />
                     <span>Explore</span>
                   </Link>
-                  <Link
-                    href="/user/wishlist"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-                  >
+                  <Link href="/user/wishlist" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                     <Heart className="w-5 h-5" />
                     <span>Wishlist</span>
                   </Link>
-                  <Link
-                    href="/user/orders"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-                  >
+                  <Link href="/user/orders" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                     <ShoppingBag className="w-5 h-5" />
                     <span>Orders</span>
                   </Link>
-                  <Link
-                    href="/user/profile"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
-                  >
+                  <Link href="/user/profile" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700">
                     <User className="w-5 h-5" />
                     <span>Profile</span>
                   </Link>
@@ -214,11 +217,7 @@ export default function UserFeed() {
                       stories={[
                         {
                           id: i,
-                          artist: {
-                            name: `Artist ${i}`,
-                            username: `@artist${i}`,
-                            avatar: `/placeholder.svg?height=56&width=56`,
-                          },
+                          artist: { name: `Artist ${i}`, username: `@artist${i}`, avatar: `/placeholder.svg?height=56&width=56` },
                           image: `/placeholder.svg?height=400&width=300`,
                           timestamp: "2h ago",
                         },
@@ -242,12 +241,22 @@ export default function UserFeed() {
               </CardContent>
             </Card>
 
-            {/* Posts */}
-            {posts.map((post) => (
-              <Card
-                key={post.id}
-                className="overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-              >
+            {/* Dynamic Posts */}
+            {error && <p className="text-sm text-red-600">{String(error)}</p>}
+            {loading && (
+              <div className="space-y-4">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="animate-pulse h-96 bg-slate-200 dark:bg-slate-800 rounded" />
+                ))}
+              </div>
+            )}
+            {!loading && posts.length === 0 && (
+              <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                <CardContent className="p-6 text-center text-sm text-slate-500">No artworks yet. Check back soon.</CardContent>
+              </Card>
+            )}
+            {!loading && posts.map((post) => (
+              <Card key={post.id} className="overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -259,10 +268,7 @@ export default function UserFeed() {
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span
-                            className="font-semibold cursor-pointer hover:underline"
-                            onClick={() => handleArtistClick(post.artist.id)}
-                          >
+                          <span className="font-semibold cursor-pointer hover:underline" onClick={() => handleArtistClick(post.artist.id)}>
                             {post.artist.name}
                           </span>
                           {post.artist.verified && (
@@ -280,16 +286,16 @@ export default function UserFeed() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
-                        variant={followedArtists.has(post.artist.id) ? "secondary" : "default"}
+                        variant={post.artist.id && followedArtists.has(post.artist.id) ? "secondary" : "default"}
                         size="sm"
                         onClick={() => toggleFollow(post.artist.id)}
                         className={
-                          !followedArtists.has(post.artist.id)
+                          post.artist.id && !followedArtists.has(post.artist.id)
                             ? "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                             : ""
                         }
                       >
-                        {followedArtists.has(post.artist.id) ? "Following" : "Follow"}
+                        {post.artist.id && followedArtists.has(post.artist.id) ? "Following" : "Follow"}
                       </Button>
                     </div>
                   </div>
@@ -316,38 +322,10 @@ export default function UserFeed() {
                         <Heart className={`w-5 h-5 ${likedPosts.has(post.id) ? "fill-current" : ""}`} />
                         <span className="ml-1">{post.likes + (likedPosts.has(post.id) ? 1 : 0)}</span>
                       </Button>
-                      <CommentSection
-                        postId={post.id}
-                        comments={[
-                          {
-                            id: 1,
-                            user: {
-                              name: "John Doe",
-                              username: "@johndoe",
-                              avatar: "/placeholder.svg?height=32&width=32",
-                            },
-                            content: "Beautiful artwork! Love the colors.",
-                            likes: 5,
-                            timestamp: "2h ago",
-                          },
-                          {
-                            id: 2,
-                            user: {
-                              name: "Jane Smith",
-                              username: "@janesmith",
-                              avatar: "/placeholder.svg?height=32&width=32",
-                            },
-                            content: "This is amazing! How long did it take to create?",
-                            likes: 3,
-                            timestamp: "1h ago",
-                          },
-                        ]}
-                      >
-                        <Button variant="ghost" size="sm" className="text-slate-600 dark:text-slate-400">
-                          <MessageCircle className="w-5 h-5" />
-                          <span className="ml-1">{post.comments}</span>
-                        </Button>
-                      </CommentSection>
+                      <Button variant="ghost" size="sm" className="text-slate-600 dark:text-slate-400" disabled>
+                        <MessageCircle className="w-5 h-5" />
+                        <span className="ml-1">{post.comments}</span>
+                      </Button>
                       <ShareModal postUrl={`https://artwala.com/post/${post.id}`} postTitle={post.title}>
                         <Button variant="ghost" size="sm" className="text-slate-600 dark:text-slate-400">
                           <Share2 className="w-5 h-5" />
@@ -370,14 +348,14 @@ export default function UserFeed() {
                     <div className="flex items-center justify-between">
                       <span className="text-2xl font-bold text-green-600 dark:text-green-400">₹{post.price}</span>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="bg-transparent">
+                        <Button variant="outline" size="sm" className="bg-transparent" onClick={() => router.push(`/artwork/${post.id}`)}>
                           <Eye className="w-4 h-4 mr-1" />
                           View
                         </Button>
                         <Button
                           size="sm"
                           className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
-                          onClick={() => handleBuyNow(post.id, post.price)}
+                          onClick={() => handleBuyNow(post.id, String(post.price))}
                         >
                           Buy Now
                         </Button>
@@ -405,10 +383,7 @@ export default function UserFeed() {
                         <AvatarFallback>A{i}</AvatarFallback>
                       </Avatar>
                       <div>
-                        <div
-                          className="font-medium text-sm cursor-pointer hover:underline"
-                          onClick={() => handleArtistClick(i)}
-                        >
+                        <div className="font-medium text-sm cursor-pointer hover:underline" onClick={() => handleArtistClick(i)}>
                           Artist {i}
                         </div>
                         <div className="text-xs text-slate-600 dark:text-slate-400">@artist{i}</div>
