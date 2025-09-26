@@ -1,16 +1,11 @@
 "use client"
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Search, Home, Compass, User, ShoppingBag, Palette, Eye, Bookmark, Trash2 } from "lucide-react"
-import Link from "next/link"
-import { UserMenu } from "@/components/user-menu"
-
-import { ThemeToggle } from "@/components/theme-toggle"
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Eye, Bookmark, Trash2 } from 'lucide-react'
+import Link from 'next/link'
 
 export default function SavedPage() {
   const [savedItems, setSavedItems] = useState([
@@ -48,82 +43,7 @@ export default function SavedPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:to-purple-900/20">
-      {/* Header */}
-      <header className="bg-white/95 dark:bg-gray-800/95 border-b sticky top-0 z-50 backdrop-blur-md">
-          <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg rounded-lg flex items-center justify-center">
-                <Palette className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-bold text-lg">ARTWALA</span>
-            </Link>
-
-            <div className="flex-1 max-w-md mx-8">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                <Input placeholder="Search artists, artworks..." className="pl-10 bg-white dark:bg-slate-700" />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <ThemeToggle />
-              <UserMenu />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <Card className="sticky top-24">
-              <CardContent className="p-4">
-                <nav className="space-y-2">
-                  <Link
-                    href="/user/feed"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <Home className="w-5 h-5" />
-                    <span>Feed</span>
-                  </Link>
-                  <Link
-                    href="/user/explore"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <Compass className="w-5 h-5" />
-                    <span>Explore</span>
-                  </Link>
-                  <Link
-                    href="/user/saved"
-                    className="flex items-center gap-3 p-2 rounded-lg bg-gradient-to-r from-purple-100 to-pink-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 shadow-sm"
-                  >
-                    <Bookmark className="w-5 h-5" />
-                    <span className="font-medium">Saved</span>
-                  </Link>
-                  <Link
-                    href="/user/orders"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <ShoppingBag className="w-5 h-5" />
-                    <span>Orders</span>
-                  </Link>
-                  <Link
-                    href="/user/profile"
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <User className="w-5 h-5" />
-                    <span>Profile</span>
-                  </Link>
-                </nav>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-3">
+    <div className="p-4 md:p-6 space-y-6">
             <div className="mb-6">
               <h1 className="text-3xl font-bold mb-2">Saved Artworks</h1>
               <p className="text-muted-foreground">Your collection of saved artworks ({savedItems.length} items)</p>
@@ -188,9 +108,6 @@ export default function SavedPage() {
                 ))}
               </div>
             )}
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
