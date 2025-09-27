@@ -444,3 +444,19 @@ export async function fetchWishlist() {
 }
 
 
+// api.ts
+
+export const uploadArtistDetails = async (formData: FormData) => {
+  try {
+    const res = await fetch("/api/artist-membership", {
+      method: "POST",
+      body: formData,
+    })
+    if (!res.ok) {
+      throw new Error("Failed to submit artist details")
+    }
+    return await res.json()
+  } catch (error: any) {
+    throw { message: error.message || "Something went wrong" }
+  }
+}

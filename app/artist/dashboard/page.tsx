@@ -38,8 +38,16 @@ export default function ArtistDashboard() {
   const { stats, loading: statsLoading, error: statsError } = useUserStats()
   const { recommendations, loading: recommendationsLoading } = useArtistRecommendations()
   const { artworks, loading: artworksLoading, prependArtwork } = useArtworks({ limit: 6 })
-  const hasPremiumMembership = profile?.membership_statuse === false
+  
+  // FIXED: Correct membership check
+  const hasPremiumMembership = profile?.is_member === true
 
+  // Debug logging to check membership status
+  console.log('Profile membership status:', {
+    is_member: profile?.is_member,
+    hasPremiumMembership,
+    profile: profile
+  })
 
   if (profileLoading || statsLoading) {
     return (
@@ -75,7 +83,7 @@ export default function ArtistDashboard() {
     )
   }
 
-  // Mock recent activity data - to be replaced with real API
+  // Mock recent activity data
   const recentSales = [
     { id: 1, artwork: "Sunset Dreams", buyer: "Rahul K.", amount: "₹15,000", date: "2 days ago" },
     { id: 2, artwork: "Urban Rhythm", buyer: "Priya S.", amount: "₹8,500", date: "5 days ago" },
@@ -120,6 +128,12 @@ export default function ArtistDashboard() {
               <Badge variant="secondary" className="ml-2">
                 Artist
               </Badge>
+              {hasPremiumMembership && (
+                <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 ml-2">
+                  <Star className="w-3 h-3 mr-1" />
+                  Premium Member
+                </Badge>
+              )}
             </Link>
 
             <div className="flex items-center gap-4">
@@ -150,12 +164,24 @@ export default function ArtistDashboard() {
                   </Avatar>
                   <h3 className="font-semibold">{profile.full_name || profile.username}</h3>
                   <p className="text-sm text-muted-foreground">@{profile.username}</p>
+                  
+                  {/* Show membership status */}
+                  {hasPremiumMembership ? (
+                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 mt-2">
+                      ✓ Premium Member
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="mt-2">
+                      Free Account
+                    </Badge>
+                  )}
+                  
                   <div className="mt-3">
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span>Profile Completion</span>
-                      <span>{stats.profile_completion.percentage || 0}%</span>
+                      <span>{stats.profile_completion?.percentage || 0}%</span>
                     </div>
-                    <Progress value={stats.profile_completion.percentage || 0} className="h-2" />
+                    <Progress value={stats.profile_completion?.percentage || 0} className="h-2" />
                   </div>
                 </div>
 
@@ -166,7 +192,7 @@ export default function ArtistDashboard() {
                       Dashboard
                     </Link>
                   </Button>
-                  <PremiumFeature disabled={true}>
+                  <PremiumFeature disabled={!hasPremiumMembership}>
                     <Button variant="ghost" className="w-full justify-start" asChild>
                       <Link href="/artist/artworks">
                         <Palette className="w-4 h-4 mr-3" />
@@ -174,7 +200,7 @@ export default function ArtistDashboard() {
                       </Link>
                     </Button>
                   </PremiumFeature>
-                  <PremiumFeature disabled={true}>
+                  <PremiumFeature disabled={!hasPremiumMembership}>
                     <Button variant="ghost" className="w-full justify-start" asChild>
                       <Link href="/artist/orders">
                         <ShoppingBag className="w-4 h-4 mr-3" />
@@ -182,7 +208,7 @@ export default function ArtistDashboard() {
                       </Link>
                     </Button>
                   </PremiumFeature>
-                  <PremiumFeature disabled={true}>
+                  <PremiumFeature disabled={!hasPremiumMembership}>
                     <Button variant="ghost" className="w-full justify-start" asChild>
                       <Link href="/artist/messages">
                         <MessageSquare className="w-4 h-4 mr-3" />
@@ -220,7 +246,7 @@ export default function ArtistDashboard() {
                     ))}
                   </div>
                 ) : (
-                  recommendations?.trending_artists.slice(0, 4).map((artist) => (
+                  recommendations?.trending_artists?.slice(0, 4).map((artist) => (
                     <div key={artist.id} className="flex items-center justify-between mb-3 last:mb-0">
                       <div className="flex items-center space-x-3">
                         <Avatar className="w-10 h-10">
@@ -247,13 +273,74 @@ export default function ArtistDashboard() {
           {/* Main Content */}
           <div className="lg:col-span-3">
             <div className="mb-6">
-              <h1 className="text-3xl font-bold mb-2">Welcome back, {profile.first_name || profile.username}!</h1>
-              <p className="text-muted-foreground">Here's what's happening with your art today.</p>
+              <h1 className="text-3xl font-bold mb-2">
+                Welcome back, {profile.first_name || profile.username}!
+                {hasPremiumMembership && " 🎉"}
+              </h1>
+              <p className="text-muted-foreground">
+                {hasPremiumMembership 
+                  ? "You have full access to all premium features!" 
+                  : "Upgrade to unlock exclusive features and grow your art business"
+                }
+              </p>
             </div>
+
+            {/* Upgrade Banner - Only show if NOT premium member */}
+            {!hasPremiumMembership && (
+              <Card className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 border-purple-200 dark:border-purple-700">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+                        <Star className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">Upgrade to Premium</h3>
+                        <p className="text-sm text-muted-foreground">
+                          Unlock exclusive features and grow your art business
+                        </p>
+                      </div>
+                    </div>
+                    <Link href="/artist/membership">
+                      <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
+                        Upgrade Now - ₹1000/year
+                      </Button>
+                    </Link>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Lock className="w-4 h-4" />
+                      <span>Upload Artwork</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Lock className="w-4 h-4" />
+                      <span>Schedule Posts</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Lock className="w-4 h-4" />
+                      <span>View Messages</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Lock className="w-4 h-4" />
+                      <span>Advanced Analytics</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Lock className="w-4 h-4" />
+                      <span>Priority Support</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Lock className="w-4 h-4" />
+                      <span>Commission Projects</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Quick Actions */}
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <PremiumFeature disabled={true}>
+              <PremiumFeature disabled={!hasPremiumMembership}>
                 <UploadArtworkModal onUploaded={(art) => prependArtwork(art)}>
                   <Card className="cursor-pointer hover:shadow-md transition-shadow">
                     <CardContent className="p-4 flex items-center gap-3">
@@ -264,7 +351,7 @@ export default function ArtistDashboard() {
                 </UploadArtworkModal>
               </PremiumFeature>
 
-              <PremiumFeature disabled={true}>
+              <PremiumFeature disabled={!hasPremiumMembership}>
                 <Card className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardContent className="p-4 flex items-center gap-3">
                     <Calendar className="w-8 h-8 text-purple-500" />
@@ -273,7 +360,7 @@ export default function ArtistDashboard() {
                 </Card>
               </PremiumFeature>
 
-              <PremiumFeature disabled={true}>
+              <PremiumFeature disabled={!hasPremiumMembership}>
                 <Card className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardContent className="p-4 flex items-center gap-3">
                     <MessageSquare className="w-8 h-8 text-green-500" />
@@ -282,59 +369,6 @@ export default function ArtistDashboard() {
                 </Card>
               </PremiumFeature>
             </div>
-
-{!hasPremiumMembership && (
-  <Card className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 border-purple-200 dark:border-purple-700">
-    <CardContent className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
-            <Star className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-lg">Upgrade to Premium</h3>
-            <p className="text-sm text-muted-foreground">
-              Unlock exclusive features and grow your art business
-            </p>
-          </div>
-        </div>
-        <Link href="membership">
-          <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
-            Upgrade Now - ₹1000/year
-          </Button>
-        </Link>
-      </div>
-
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Lock className="w-4 h-4" />
-          <span>Upload Artwork</span>
-        </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Lock className="w-4 h-4" />
-          <span>Schedule Posts</span>
-        </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Lock className="w-4 h-4" />
-          <span>View Messages</span>
-        </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Lock className="w-4 h-4" />
-          <span>Advanced Analytics</span>
-        </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Lock className="w-4 h-4" />
-          <span>Priority Support</span>
-        </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
-          <Lock className="w-4 h-4" />
-          <span>Commission Projects</span>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-)}
-
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -463,7 +497,6 @@ export default function ArtistDashboard() {
                               <div>
                                 <p className="font-medium">{artwork.title}</p>
                                 <p className="text-sm text-muted-foreground">
-                                  {/* Placeholder metrics until backend provides */}
                                   {new Date(artwork.created_at).toLocaleDateString()}
                                 </p>
                               </div>
