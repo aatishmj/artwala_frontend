@@ -1,30 +1,27 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/api';
 
-export interface Artist {
+interface ArtistRecommendation {
   id: number;
   username: string;
-  full_name: string;
-  user_type: string;
-  bio: string;
-  location: string;
-  profile_image: string;
+  first_name: string;
+  last_name: string;
+  profile_image?: string;
+  bio?: string;
+  location?: string;
   is_verified: boolean;
-  stats: {
-    artworks_count?: number;
-    followers_count?: number;
-    total_likes_received?: number;
-  };
+  follower_count?: number;
+  date_joined: string;
 }
 
-export interface ArtistRecommendations {
-  trending_artists: Artist[];
-  new_artists: Artist[];
+interface ArtistRecommendationsData {
+  trending_artists: ArtistRecommendation[];
+  new_artists: ArtistRecommendation[];
   recommended_count: number;
 }
 
 export const useArtistRecommendations = () => {
-  const [recommendations, setRecommendations] = useState<ArtistRecommendations | null>(null);
+  const [recommendations, setRecommendations] = useState<ArtistRecommendationsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -32,11 +29,10 @@ export const useArtistRecommendations = () => {
     try {
       setLoading(true);
       setError(null);
-      
       const response = await apiClient.getArtistRecommendations();
-      setRecommendations(response);
+      setRecommendations(response.data);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to fetch artist recommendations');
+      setError(err.message || 'Failed to load recommendations');
     } finally {
       setLoading(false);
     }

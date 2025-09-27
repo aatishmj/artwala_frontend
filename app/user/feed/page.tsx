@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Heart, Search, Home, Compass, User, ShoppingBag, Palette } from "lucide-react"
+import { Heart, Search, Home, Compass, User, ShoppingBag, Palette, Eye, MapPin, Calendar } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -14,9 +14,58 @@ import { UserMenu } from "@/components/user-menu"
 import { apiClient } from "@/lib/api"
 import { toast } from "sonner"
 
+interface Artist {
+  id: number
+  name?: string
+  username: string
+  avatar?: string
+  verified?: boolean
+  location?: string
+  followers?: string
+  artworks?: number
+  first_name?: string
+  last_name?: string
+  profile_image?: string
+  is_verified?: boolean
+}
+
+interface Artwork {
+  id: number
+  title: string
+  description: string
+  image: string
+  price: string
+  category: string
+  likes?: number
+  views?: number
+  artist: Artist
+  created_at: string
+  imageHeightClass?: string
+}
+
 export default function UserFeed() {
   const [wishlistPosts, setWishlistPosts] = useState<Set<number>>(new Set())
+  const [artworks, setArtworks] = useState<Artwork[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
+
+  useEffect(() => {
+    const fetchArtworks = async () => {
+      try {
+        setLoading(true)
+        // Simulate API call - replace with actual API endpoint
+        const data = await apiClient.getArtworks()
+        setArtworks(data)
+      } catch (err: any) {
+        setError(err.message || 'Failed to load artworks')
+        toast.error("Failed to load artworks")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchArtworks()
+  }, [])
 
   const toggleWishlist = async (artworkId: number) => {
     try {
@@ -37,84 +86,210 @@ export default function UserFeed() {
     }
   }
 
+  const handleBuyNow = (artworkId: number, price: string) => {
+    router.push(`/payment?artwork=${artworkId}&price=${price}`)
+  }
+
+  const handleViewDetails = (artworkId: number) => {
+    router.push(`/artwork/${artworkId}`)
+  }
+
   const handleArtistClick = (artistId: number) => {
     router.push(`/artist/${artistId}`)
   }
 
-  const posts = [
+  const suggestedArtists: Artist[] = [
     {
       id: 1,
-      artist: {
-        id: 1,
-        name: "Sarah Chen",
-        avatar: "/placeholder.svg?height=40&width=40",
-      },
-      image: "/placeholder.svg?height=400&width=400",
-      title: "Modern Art Collection",
-      description: "Contemporary pieces that inspire creativity",
-      imageHeightClass: "h-56" // Manual adjustment for varied height
+      name: "Priya Sharma",
+      username: "@priya_art",
+      avatar: "/placeholder.svg?height=60&width=60",
+      verified: true,
+      location: "Mumbai",
+      followers: "2.3K",
+      artworks: 45
     },
     {
       id: 2,
+      name: "Arjun Patel",
+      username: "@arjun_sculpts",
+      avatar: "/placeholder.svg?height=60&width=60",
+      verified: false,
+      location: "Delhi",
+      followers: "1.8K",
+      artworks: 32
+    },
+    {
+      id: 3,
+      name: "Maya Singh",
+      username: "@maya_digital",
+      avatar: "/placeholder.svg?height=60&width=60",
+      verified: true,
+      location: "Bangalore",
+      followers: "3.1K",
+      artworks: 67
+    }
+  ]
+
+  // Sample data if API fails
+  const sampleArtworks: Artwork[] = [
+    {
+      id: 1,
+      title: "Modern Art Collection",
+      description: "Contemporary pieces that inspire creativity and innovation in modern art",
+      image: "/placeholder.svg?height=400&width=400",
+      price: "15,000",
+      category: "Painting",
+      likes: 234,
+      views: 1200,
+      artist: {
+        id: 1,
+        name: "Sarah Chen",
+        username: "@sarahchen",
+        avatar: "/placeholder.svg?height=40&width=40",
+        verified: true,
+        location: "New York",
+        followers: "5.2K",
+        artworks: 89
+      },
+      created_at: "2024-01-15",
+      imageHeightClass: "h-56"
+    },
+    {
+      id: 2,
+      title: "Nature Designs",
+      description: "Organic patterns and natural beauty captured in stunning detail",
+      image: "/placeholder.svg?height=400&width=400",
+      price: "8,500",
+      category: "Digital Art",
+      likes: 156,
+      views: 890,
       artist: {
         id: 2,
         name: "Emma Wilson",
+        username: "@emmawilson",
         avatar: "/placeholder.svg?height=40&width=40",
+        verified: false,
+        location: "London",
+        followers: "3.7K",
+        artworks: 45
       },
-      image: "/placeholder.svg?height=400&width=400",
-      title: "Nature Designs",
-      description: "Organic patterns and natural beauty",
+      created_at: "2024-01-14",
       imageHeightClass: "h-48"
     },
     {
       id: 3,
+      title: "Architecture Series",
+      description: "Modern architectural marvels and urban landscapes",
+      image: "/placeholder.svg?height=400&width=400",
+      price: "12,000",
+      category: "Photography",
+      likes: 89,
+      views: 567,
       artist: {
         id: 3,
         name: "David Kim",
+        username: "@davidkim",
         avatar: "/placeholder.svg?height=40&width=40",
+        verified: true,
+        location: "Seoul",
+        followers: "8.9K",
+        artworks: 123
       },
-      image: "/placeholder.svg?height=400&width=400",
-      title: "Architecture",
-      description: "Modern architectural marvels",
-      imageHeightClass: "h-64" // Manual adjustment for varied height
+      created_at: "2024-01-13",
+      imageHeightClass: "h-64"
     },
-     {
+    {
       id: 4,
+      title: "Digital Dreams",
+      description: "Exploring the future of digital art and virtual creativity",
+      image: "/placeholder.svg?height=400&width=400",
+      price: "9,500",
+      category: "Digital Art",
+      likes: 312,
+      views: 1456,
       artist: {
         id: 4,
         name: "Priya Sharma",
+        username: "@priya_art",
         avatar: "/placeholder.svg?height=40&width=40",
+        verified: true,
+        location: "Mumbai",
+        followers: "2.3K",
+        artworks: 45
       },
-      image: "/placeholder.svg?height=400&width=400",
-      title: "Digital Dreams",
-      description: "Exploring the future of digital art.",
-      imageHeightClass: "h-40" // Manual adjustment for varied height
+      created_at: "2024-01-12",
+      imageHeightClass: "h-40"
     },
     {
       id: 5,
+      title: "Abstract Visions",
+      description: "Bold colors and striking forms in abstract expressionism",
+      image: "/placeholder.svg?height=400&width=400",
+      price: "18,000",
+      category: "Painting",
+      likes: 178,
+      views: 923,
       artist: {
         id: 5,
         name: "Rahul Singh",
+        username: "@rahulsingh",
         avatar: "/placeholder.svg?height=40&width=40",
+        verified: false,
+        location: "Delhi",
+        followers: "1.4K",
+        artworks: 23
       },
-      image: "/placeholder.svg?height=400&width=400",
-      title: "Abstract Visions",
-      description: "Bold colors and striking forms.",
-      imageHeightClass: "h-52" // Manual adjustment for varied height
+      created_at: "2024-01-11",
+      imageHeightClass: "h-52"
     },
     {
       id: 6,
+      title: "Coastal Serenity",
+      description: "Capturing the calm and beauty of ocean landscapes",
+      image: "/placeholder.svg?height=400&width=400",
+      price: "7,200",
+      category: "Painting",
+      likes: 245,
+      views: 1345,
       artist: {
         id: 6,
         name: "Jessica Lee",
+        username: "@jessicalee",
         avatar: "/placeholder.svg?height=40&width=40",
+        verified: true,
+        location: "Sydney",
+        followers: "6.8K",
+        artworks: 67
       },
-      image: "/placeholder.svg?height=400&width=400",
-      title: "Coastal Serenity",
-      description: "Capturing the calm of the ocean.",
+      created_at: "2024-01-10",
       imageHeightClass: "h-48"
-    },
+    }
   ]
+
+  const displayArtworks = artworks.length > 0 ? artworks : sampleArtworks
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading artworks...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
@@ -194,28 +369,31 @@ export default function UserFeed() {
 
               {/* Suggested Artists */}
               <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                <CardHeader className="p-3">
-                  <h3 className="font-semibold text-sm">Suggested Artists</h3>
+                <CardHeader className="p-4">
+                  <h3 className="font-semibold">Suggested Artists</h3>
                 </CardHeader>
-                <CardContent className="p-3 space-y-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Avatar className="w-8 h-8 cursor-pointer" onClick={() => handleArtistClick(i)}>
-                          <AvatarImage src={`/placeholder.svg?height=32&width=32`} />
-                          <AvatarFallback>A{i}</AvatarFallback>
+                <CardContent className="p-4 space-y-4">
+                  {suggestedArtists.map((artist) => (
+                    <div key={artist.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar
+                          className="w-10 h-10 cursor-pointer"
+                          onClick={() => handleArtistClick(artist.id)}
+                        >
+                          <AvatarImage src={artist.profile_image || artist.avatar} />
+                          <AvatarFallback>{artist.name?.[0] || 'A'}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <div
-                            className="font-medium text-sm cursor-pointer hover:underline"
-                            onClick={() => handleArtistClick(i)}
-                          >
-                            Artist {i}
+                           <div
+                             className="font-medium text-sm cursor-pointer hover:underline"
+                             onClick={() => handleArtistClick(artist.id)}
+                           >
+                             {`${artist.first_name || ''} ${artist.last_name || ''}`.trim() || artist.name || artist.username}
                           </div>
-                          <div className="text-xs text-slate-500 dark:text-slate-400">@artist{i}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">{artist.username}</div>
                         </div>
                       </div>
-                      <Button variant="outline" size="xs" className="bg-transparent">
+                      <Button variant="outline" size="sm" className="bg-transparent text-xs">
                         Follow
                       </Button>
                     </div>
@@ -225,79 +403,140 @@ export default function UserFeed() {
 
               {/* Trending Categories */}
               <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-                <CardHeader className="p-3">
-                  <h3 className="font-semibold text-sm">Trending Categories</h3>
+                <CardHeader className="p-4">
+                  <h3 className="font-semibold">Trending Categories</h3>
                 </CardHeader>
-                <CardContent className="p-3">
-                  {["Paintings", "Digital Art", "Sculptures", "Photography", "Crafts"].map((category) => (
-                    <Badge
-                      key={category}
-                      variant="secondary"
-                      className="mr-1.5 mb-1.5 bg-slate-100 dark:bg-slate-700 text-xs font-normal"
-                    >
-                      {category}
-                    </Badge>
-                  ))}
+                <CardContent className="p-4">
+                  <div className="flex flex-wrap gap-2">
+                    {["Paintings", "Digital Art", "Sculptures", "Photography", "Crafts"].map((category) => (
+                      <Badge
+                        key={category}
+                        variant="secondary"
+                        className="bg-slate-100 dark:bg-slate-700 text-xs font-normal"
+                      >
+                        {category}
+                      </Badge>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </div>
           </div>
           
-          {/* MODIFIED: Changed to CSS Columns for Pinterest-like layout */}
-          <div className="lg:col-span-3 columns-2 md:columns-2 lg:columns-3 gap-6">
-            {/* Posts */}
-            {posts.map((post) => (
-              <Card
-                key={post.id}
-                className="overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 flex flex-col group mb-6 break-inside-avoid-column" /* Added mb-6 and break-inside-avoid-column */
-              >
-                {/* Image Section */}
-                <div className="overflow-hidden">
-                  {/* MODIFIED: Used dynamic imageHeightClass */}
-                  <img
-                    src={post.image || "/placeholder.svg"}
-                    alt={post.title}
-                    className={`w-full ${post.imageHeightClass} object-cover group-hover:scale-105 transition-transform duration-300`}
-                  />
-                </div>
-
-                {/* Content Section */}
-                <CardContent className="p-4 flex flex-col flex-grow">
-                  {/* Title and Description */}
-                  <div className="flex-grow">
-                    <h3 className="font-bold text-lg mb-1">{post.title}</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">{post.description}</p>
+          {/* Artworks Grid */}
+          <div className="lg:col-span-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {displayArtworks.map((artwork) => (
+                <Card
+                  key={artwork.id}
+                  className="overflow-hidden bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 flex flex-col group hover:shadow-lg transition-shadow"
+                >
+                  {/* Image Section */}
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={artwork.image || "/placeholder.svg"}
+                      alt={artwork.title}
+                      className={`w-full ${artwork.imageHeightClass} object-cover group-hover:scale-105 transition-transform duration-300`}
+                    />
+                    <div className="absolute top-2 left-2">
+                      <Badge variant="secondary" className="bg-black/50 text-white text-xs">
+                        {artwork.category}
+                      </Badge>
+                    </div>
+                    <div className="absolute top-2 right-2 flex gap-2">
+                      <div className="bg-black/50 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                        <Eye className="w-3 h-3" />
+                        {artwork.views}
+                      </div>
+                      <div className="bg-black/50 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                        <Heart className="w-3 h-3" />
+                        {artwork.likes}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Artist Info and Wishlist Button */}
-                  <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
-                    <div
-                      className="flex items-center gap-2 cursor-pointer"
-                      onClick={() => handleArtistClick(post.artist.id)}
-                    >
-                      <Avatar className="w-6 h-6">
-                        <AvatarImage src={post.artist.avatar || "/placeholder.svg"} />
-                        <AvatarFallback>{post.artist.name[0]}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm font-medium hover:underline">{post.artist.name}</span>
+                  {/* Content Section */}
+                  <CardContent className="p-4 flex flex-col flex-grow">
+                    {/* Title and Description */}
+                    <div className="flex-grow mb-4">
+                      <h3 className="font-bold text-lg mb-2">{artwork.title}</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-3">
+                        {artwork.description}
+                      </p>
+                      
+                      {/* Artist Info */}
+                      <div
+                        className="flex items-center gap-2 cursor-pointer mb-3"
+                        onClick={() => handleArtistClick(artwork.artist.id)}
+                      >
+                        <Avatar className="w-6 h-6">
+                          <AvatarImage src={artwork.artist.profile_image || artwork.artist.avatar} />
+                          <AvatarFallback>{(artwork.artist.first_name || artwork.artist.name || artwork.artist.username || '')[0] || 'A'}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                           <span className="text-sm font-medium hover:underline">{`${artwork.artist.first_name || ''} ${artwork.artist.last_name || ''}`.trim() || artwork.artist.name || artwork.artist.username}</span>
+                        </div>
+                      </div>
+
+                      {/* Additional Info */}
+                      <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          <span>{artwork.artist.location}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>{new Date(artwork.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
                     </div>
 
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => toggleWishlist(post.id)}
-                      className={
-                        wishlistPosts.has(post.id)
-                          ? "text-red-500"
-                          : "text-slate-400 hover:text-red-500"
-                      }
-                    >
-                      <Heart className={`w-5 h-5 ${wishlistPosts.has(post.id) ? "fill-current" : ""}`} />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    {/* Price and Action Buttons */}
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-700">
+                      <div>
+                        <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                          ₹{artwork.price}
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewDetails(artwork.id)}
+                          className="flex items-center gap-1"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span className="hidden sm:inline">View</span>
+                        </Button>
+                        
+                        <Button
+                          size="sm"
+                          onClick={() => handleBuyNow(artwork.id, artwork.price)}
+                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg"
+                        >
+                          <ShoppingBag className="w-4 h-4 mr-1" />
+                          Buy Now
+                        </Button>
+
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => toggleWishlist(artwork.id)}
+                          className={
+                            wishlistPosts.has(artwork.id)
+                              ? "text-red-500"
+                              : "text-slate-400 hover:text-red-500"
+                          }
+                        >
+                          <Heart className={`w-5 h-5 ${wishlistPosts.has(artwork.id) ? "fill-current" : ""}`} />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         </div>
       </div>

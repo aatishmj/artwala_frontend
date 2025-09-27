@@ -11,7 +11,10 @@ export const metadata: Metadata = {
   title: "ARTWALA Foundation - Empowering Creators, Connecting Communities",
   description:
     "An artist-led NGO dedicated to empowering creators, promoting visual literacy, and connecting the art community through mentorship, events, and digital promotion.",
-    generator: 'v0.dev'
+    generator: 'v0.dev',
+  icons: {
+    icon: '/favicon.png',
+  },
 }
 
 export default function RootLayout({

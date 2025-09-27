@@ -51,165 +51,214 @@ export default function CommunityPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:to-purple-900/20">
-      {/* Header */}
-      <header className="border-b bg-white/90 dark:bg-gray-900/90 backdrop-blur-md">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Home
-              </Button>
-            </Link>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
-                <Palette className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                ARTWALA Community
-              </span>
-            </div>
-          </div>
-          <ThemeToggle />
-        </div>
-      </header>
-
-      <div className="container mx-auto px-4 py-16">
-        <div className="max-w-6xl mx-auto">
-          {/* Hero Section */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-4">Join Our Creative Community</h1>
-            <p className="text-xl text-muted-foreground mb-8">
-              Connect with artists, attend events, and be part of a vibrant creative ecosystem across India
-            </p>
-            <div className="flex justify-center gap-4">
-              <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500" asChild>
-                <Link href="/auth/signup">
-                  Join Community
-                  <ArrowRight className="w-4 h-4 ml-2" />
+        {/* Header */}
+        <header className="border-b bg-white/90 dark:bg-gray-900/90 backdrop-blur-md sticky top-0 z-50">
+          <div className="container mx-auto px-4 sm:px-6 py-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-start">
+                <Link href="/">
+                  <Button variant="ghost" size="sm" className="hidden sm:flex">
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Home
+                  </Button>
+                  <Button variant="ghost" size="sm" className="sm:hidden">
+                    <ArrowLeft className="w-4 h-4" />
+                  </Button>
                 </Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link href="/auth/login">Sign In</Link>
-              </Button>
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+                    <Palette className="w-5 h-5 text-white" />
+                  </div>
+                  <span className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                    ARTWALA Community
+                  </span>
+                </div>
+              </div>
+              <div className="w-full sm:w-auto flex justify-center sm:justify-end">
+                <ThemeToggle />
+              </div>
             </div>
           </div>
+        </header>
 
-          {/* City Chapters */}
-          <div className="mb-12">
-            <h2 className="text-3xl font-bold mb-8 text-center">City Chapters</h2>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {cityChapters.map((city) => (
-                <Card key={city.name} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xl font-semibold flex items-center gap-2">
-                        <MapPin className="w-5 h-5 text-purple-600" />
-                        {city.name}
-                      </h3>
-                      <Badge variant={city.active ? "default" : "secondary"}>
-                        {city.active ? "Active" : "Coming Soon"}
-                      </Badge>
-                    </div>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        <span>{city.members} members</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>{city.events} events this month</span>
-                      </div>
-                    </div>
-                    {city.active && (
-                      <Button className="w-full mt-4 bg-transparent" variant="outline">
-                        Join {city.name} Chapter
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
+        <div className="container mx-auto px-4 sm:px-6 py-8 sm:py-12 lg:py-16">
+          <div className="max-w-6xl mx-auto">
+            {/* Hero Section */}
+            <div className="text-center mb-8 sm:mb-12 lg:mb-16">
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 leading-tight">
+                Join Our Creative Community
+              </h1>
+              <p className="text-base sm:text-lg lg:text-xl text-muted-foreground mb-6 sm:mb-8 max-w-3xl mx-auto leading-relaxed">
+                Connect with artists, attend events, and be part of a vibrant creative ecosystem across India
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4">
+                <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500" asChild>
+                  <Link href="/auth/signup" className="flex items-center justify-center">
+                    Join Community
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link href="/auth/login">Sign In</Link>
+                </Button>
+              </div>
             </div>
-          </div>
 
-          {/* Upcoming Events */}
-          <div className="mb-12">
-            <h2 className="text-3xl font-bold mb-8 text-center">Upcoming Events</h2>
-            <div className="space-y-4">
-              {upcomingEvents.map((event) => (
-                <Card key={event.id} className="hover:shadow-lg transition-shadow">
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <h3 className="text-xl font-semibold mb-2">{event.title}</h3>
-                        <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            <span>
-                              {event.date} at {event.time}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="w-4 h-4" />
-                            <span>
-                              {event.location}, {event.city}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
-                            <span>{event.attendees} attending</span>
-                          </div>
+            {/* City Chapters */}
+            <div className="mb-8 sm:mb-12 lg:mb-16">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center">City Chapters</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                {cityChapters.map((city) => (
+                  <Card key={city.name} className="hover:shadow-lg transition-shadow duration-300 h-full">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex items-center justify-between mb-3 sm:mb-4">
+                        <h3 className="text-lg sm:text-xl font-semibold flex items-center gap-2">
+                          <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
+                          {city.name}
+                        </h3>
+                        <Badge variant={city.active ? "default" : "secondary"} className="text-xs">
+                          {city.active ? "Active" : "Coming Soon"}
+                        </Badge>
+                      </div>
+                      <div className="space-y-2 text-xs sm:text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span>{city.members.toLocaleString()} members</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                          <span>{city.events} events this month</span>
                         </div>
                       </div>
-                      <Button>Join Event</Button>
+                      {city.active && (
+                        <Button className="w-full mt-3 sm:mt-4" variant="outline" size="sm">
+                          Join {city.name} Chapter
+                        </Button>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Upcoming Events */}
+            <div className="mb-8 sm:mb-12 lg:mb-16">
+              <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center">Upcoming Events</h2>
+              <div className="space-y-3 sm:space-y-4">
+                {upcomingEvents.map((event) => (
+                  <Card key={event.id} className="hover:shadow-lg transition-shadow duration-300">
+                    <CardContent className="p-4 sm:p-6">
+                      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                        <div className="flex-1">
+                          <h3 className="text-lg sm:text-xl font-semibold mb-2 sm:mb-3">{event.title}</h3>
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-xs sm:text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <span>
+                                {event.date} at {event.time}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <span className="truncate">
+                                {event.location}, {event.city}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                              <span>{event.attendees} attending</span>
+                            </div>
+                          </div>
+                        </div>
+                        <Button size="sm" className="w-full lg:w-auto lg:min-w-[120px]">
+                          Join Event
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
+            {/* Community Benefits */}
+            <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <CardHeader>
+                <CardTitle className="text-center text-xl sm:text-2xl">Why Join Our Community?</CardTitle>
+              </CardHeader>
+              <CardContent className="p-4 sm:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                  <div className="text-center">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                      <Users className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    <h3 className="font-semibold mb-2 text-sm sm:text-base">Network</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Connect with fellow artists and art enthusiasts
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 bg-gradient-to-br from-pink-500 to-orange-500 rounded-full flex items-center justify-center">
+                      <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                    </div>
+                    <h3 className="font-semibold mb-2 text-sm sm:text-base">Events</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Attend workshops, exhibitions, and meetups
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-full flex items-center justify-center">
+                      <Palette className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                    </div>
+                    <h3 className="font-semibold mb-2 text-sm sm:text-base">Learn</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Access resources and mentorship opportunities
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-3 sm:mb-4 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                      <Users className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+                    </div>
+                    <h3 className="font-semibold mb-2 text-sm sm:text-base">Grow</h3>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      Expand your reach and grow your artistic career
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* CTA Section */}
+            <div className="text-center mt-8 sm:mt-12 lg:mt-16">
+              <h2 className="text-xl sm:text-2xl font-bold mb-4">Ready to Join?</h2>
+              <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+                Become part of India's fastest growing art community and unlock new opportunities for your creative journey.
+              </p>
+              <div className="flex flex-col sm:flex-row justify-center gap-3">
+                <Button size="lg" className="bg-gradient-to-r from-purple-500 to-pink-500" asChild>
+                  <Link href="/auth/signup" className="flex items-center justify-center">
+                    Create Your Account
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="outline" asChild>
+                  <Link href="/events">View All Events</Link>
+                </Button>
+              </div>
             </div>
           </div>
-
-          {/* Community Benefits */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-center">Why Join Our Community?</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
-                    <Users className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="font-semibold mb-2">Network</h3>
-                  <p className="text-sm text-muted-foreground">Connect with fellow artists and art enthusiasts</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-pink-500 to-orange-500 rounded-full flex items-center justify-center">
-                    <Calendar className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="font-semibold mb-2">Events</h3>
-                  <p className="text-sm text-muted-foreground">Attend workshops, exhibitions, and meetups</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-full flex items-center justify-center">
-                    <Palette className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="font-semibold mb-2">Learn</h3>
-                  <p className="text-sm text-muted-foreground">Access resources and mentorship opportunities</p>
-                </div>
-                <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                    <Users className="w-8 h-8 text-white" />
-                  </div>
-                  <h3 className="font-semibold mb-2">Grow</h3>
-                  <p className="text-sm text-muted-foreground">Expand your reach and grow your artistic career</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
+
+        {/* Footer */}
+        <footer className="border-t bg-white/80 dark:bg-gray-900/80 backdrop-blur-md mt-8 sm:mt-12 lg:mt-16">
+          <div className="container mx-auto px-4 sm:px-6 py-6">
+            <div className="text-center">
+              <p className="text-xs sm:text-sm text-muted-foreground">
+                © 2024 ARTWALA Community. Connecting artists across India.
+              </p>
+            </div>
+          </div>
+        </footer>
       </div>
-    </div>
     </ProtectedRoute>
   )
 }

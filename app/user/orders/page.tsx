@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -23,42 +24,146 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { apiClient } from "@/lib/api"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
+
+interface Order {
+  id: number
+  artwork: {
+    id: number
+    title: string
+    image: string
+    artist: {
+      id: number
+      username: string
+      first_name: string
+      last_name: string
+    }
+  }
+  buyer: any
+  quantity: number
+  status: string
+  created_at: string
+  transaction?: {
+    amount: number
+    payment_status: string
+    payment_method: string
+    timestamp: string
+  }
+}
 
 export default function OrdersPage() {
-  const orders = [
+  const router = useRouter()
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true)
+        const data = await apiClient.getUserOrders()
+        setOrders(data)
+      } catch (err: any) {
+        setError(err.message || 'Failed to load orders')
+        toast.error("Failed to load orders")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchOrders()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:to-purple-900/20 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-gray-600 dark:text-gray-400">Loading orders...</p>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:to-purple-900/20 flex items-center justify-center">
+        <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
+        <Button onClick={() => window.location.reload()}>Try Again</Button>
+      </div>
+    )
+  }
+
+  // Sample data if API fails
+  const sampleOrders: Order[] = [
     {
-      id: "ORD-001",
-      artwork: "Sunset Dreams",
-      artist: "Priya Sharma",
-      image: "/placeholder.svg?height=100&width=100",
-      amount: "₹15,000",
+      id: 1,
+      artwork: {
+        id: 1,
+        title: "Sunset Dreams",
+        image: "/placeholder.svg?height=100&width=100",
+        artist: {
+          id: 1,
+          username: "priya_art",
+          first_name: "Priya",
+          last_name: "Sharma"
+        }
+      },
+      buyer: {},
+      quantity: 1,
       status: "delivered",
-      orderDate: "Dec 15, 2024",
-      deliveryDate: "Dec 20, 2024",
-      trackingId: "TRK123456789",
+      created_at: "2024-12-15T00:00:00Z",
+      transaction: {
+        amount: 15000,
+        payment_status: "completed",
+        payment_method: "card",
+        timestamp: "2024-12-15T00:00:00Z"
+      }
     },
     {
-      id: "ORD-002",
-      artwork: "Urban Rhythm",
-      artist: "Arjun Patel",
-      image: "/placeholder.svg?height=100&width=100",
-      amount: "₹8,500",
+      id: 2,
+      artwork: {
+        id: 2,
+        title: "Urban Rhythm",
+        image: "/placeholder.svg?height=100&width=100",
+        artist: {
+          id: 2,
+          username: "arjun_sculpts",
+          first_name: "Arjun",
+          last_name: "Patel"
+        }
+      },
+      buyer: {},
+      quantity: 1,
       status: "shipped",
-      orderDate: "Dec 18, 2024",
-      estimatedDelivery: "Dec 25, 2024",
-      trackingId: "TRK987654321",
+      created_at: "2024-12-18T00:00:00Z",
+      transaction: {
+        amount: 8500,
+        payment_status: "completed",
+        payment_method: "card",
+        timestamp: "2024-12-18T00:00:00Z"
+      }
     },
     {
-      id: "ORD-003",
-      artwork: "Digital Mandala",
-      artist: "Maya Singh",
-      image: "/placeholder.svg?height=100&width=100",
-      amount: "₹12,000",
+      id: 3,
+      artwork: {
+        id: 3,
+        title: "Digital Mandala",
+        image: "/placeholder.svg?height=100&width=100",
+        artist: {
+          id: 3,
+          username: "maya_digital",
+          first_name: "Maya",
+          last_name: "Singh"
+        }
+      },
+      buyer: {},
+      quantity: 1,
       status: "processing",
-      orderDate: "Dec 20, 2024",
-      estimatedDelivery: "Dec 28, 2024",
+      created_at: "2024-12-20T00:00:00Z"
     },
   ]
+
+  const displayOrders = orders.length > 0 ? orders : sampleOrders
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -177,24 +282,24 @@ export default function OrdersPage() {
               </TabsList>
 
               <TabsContent value="all" className="space-y-4">
-                {orders.map((order) => (
+                {displayOrders.map((order) => (
                   <Card key={order.id} className="hover:shadow-lg transition-shadow">
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">
                         <img
-                          src={order.image || "/placeholder.svg"}
-                          alt={order.artwork}
+                          src={order.artwork.image || "/placeholder.svg"}
+                          alt={order.artwork.title}
                           className="w-20 h-20 rounded-lg object-cover"
                         />
                         <div className="flex-1">
                           <div className="flex items-start justify-between mb-2">
                             <div>
-                              <h3 className="font-semibold text-lg">{order.artwork}</h3>
-                              <p className="text-muted-foreground">by {order.artist}</p>
+                              <h3 className="font-semibold text-lg">{order.artwork.title}</h3>
+                              <p className="text-muted-foreground">by {order.artwork.artist.first_name} {order.artwork.artist.last_name}</p>
                               <p className="text-sm text-muted-foreground">Order #{order.id}</p>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold text-lg">{order.amount}</p>
+                              <p className="font-bold text-lg">₹{order.transaction?.amount || 'N/A'}</p>
                               <Badge className={getStatusColor(order.status)}>
                                 {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                               </Badge>
@@ -204,26 +309,16 @@ export default function OrdersPage() {
                           <div className="flex items-center gap-6 text-sm text-muted-foreground mb-4">
                             <div className="flex items-center gap-1">
                               {getStatusIcon(order.status)}
-                              <span>Ordered on {order.orderDate}</span>
+                              <span>Ordered on {new Date(order.created_at).toLocaleDateString()}</span>
                             </div>
-                            {order.deliveryDate && <span>Delivered on {order.deliveryDate}</span>}
-                            {order.estimatedDelivery && !order.deliveryDate && (
-                              <span>Est. delivery: {order.estimatedDelivery}</span>
-                            )}
                           </div>
 
                           <div className="flex items-center gap-3">
-                            {order.trackingId && (
-                              <Button variant="outline" size="sm">
-                                <Truck className="w-4 h-4 mr-2" />
-                                Track Order
-                              </Button>
-                            )}
                             <Button variant="outline" size="sm">
                               <Eye className="w-4 h-4 mr-2" />
                               View Details
                             </Button>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={() => router.push(`/messages/${order.artwork.artist.id}`)}>
                               <MessageCircle className="w-4 h-4 mr-2" />
                               Contact Artist
                             </Button>
@@ -242,24 +337,24 @@ export default function OrdersPage() {
 
               <TabsContent value="processing">
                 <div className="space-y-4">
-                  {orders
+                  {displayOrders
                     .filter((order) => order.status === "processing")
                     .map((order) => (
                       <Card key={order.id} className="hover:shadow-lg transition-shadow">
                         <CardContent className="p-6">
                           <div className="flex items-center gap-4">
                             <img
-                              src={order.image || "/placeholder.svg"}
-                              alt={order.artwork}
+                              src={order.artwork.image || "/placeholder.svg"}
+                              alt={order.artwork.title}
                               className="w-16 h-16 rounded-lg object-cover"
                             />
                             <div className="flex-1">
-                              <h3 className="font-semibold">{order.artwork}</h3>
-                              <p className="text-muted-foreground">by {order.artist}</p>
+                              <h3 className="font-semibold">{order.artwork.title}</h3>
+                              <p className="text-muted-foreground">by {order.artwork.artist.first_name} {order.artwork.artist.last_name}</p>
                               <p className="text-sm text-muted-foreground">Order #{order.id}</p>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold">{order.amount}</p>
+                              <p className="font-bold">₹{order.transaction?.amount || 'N/A'}</p>
                               <Badge className="bg-orange-100 text-orange-700">Processing</Badge>
                             </div>
                           </div>
@@ -271,24 +366,24 @@ export default function OrdersPage() {
 
               <TabsContent value="shipped">
                 <div className="space-y-4">
-                  {orders
+                  {displayOrders
                     .filter((order) => order.status === "shipped")
                     .map((order) => (
                       <Card key={order.id} className="hover:shadow-lg transition-shadow">
                         <CardContent className="p-6">
                           <div className="flex items-center gap-4">
                             <img
-                              src={order.image || "/placeholder.svg"}
-                              alt={order.artwork}
+                              src={order.artwork.image || "/placeholder.svg"}
+                              alt={order.artwork.title}
                               className="w-16 h-16 rounded-lg object-cover"
                             />
                             <div className="flex-1">
-                              <h3 className="font-semibold">{order.artwork}</h3>
-                              <p className="text-muted-foreground">by {order.artist}</p>
-                              <p className="text-sm text-muted-foreground">Tracking: {order.trackingId}</p>
+                              <h3 className="font-semibold">{order.artwork.title}</h3>
+                              <p className="text-muted-foreground">by {order.artwork.artist.first_name} {order.artwork.artist.last_name}</p>
+                              <p className="text-sm text-muted-foreground">Order #{order.id}</p>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold">{order.amount}</p>
+                              <p className="font-bold">₹{order.transaction?.amount || 'N/A'}</p>
                               <Badge className="bg-blue-100 text-blue-700">Shipped</Badge>
                             </div>
                           </div>
@@ -300,24 +395,24 @@ export default function OrdersPage() {
 
               <TabsContent value="delivered">
                 <div className="space-y-4">
-                  {orders
+                  {displayOrders
                     .filter((order) => order.status === "delivered")
                     .map((order) => (
                       <Card key={order.id} className="hover:shadow-lg transition-shadow">
                         <CardContent className="p-6">
                           <div className="flex items-center gap-4">
                             <img
-                              src={order.image || "/placeholder.svg"}
-                              alt={order.artwork}
+                              src={order.artwork.image || "/placeholder.svg"}
+                              alt={order.artwork.title}
                               className="w-16 h-16 rounded-lg object-cover"
                             />
                             <div className="flex-1">
-                              <h3 className="font-semibold">{order.artwork}</h3>
-                              <p className="text-muted-foreground">by {order.artist}</p>
-                              <p className="text-sm text-muted-foreground">Delivered on {order.deliveryDate}</p>
+                              <h3 className="font-semibold">{order.artwork.title}</h3>
+                              <p className="text-muted-foreground">by {order.artwork.artist.first_name} {order.artwork.artist.last_name}</p>
+                              <p className="text-sm text-muted-foreground">Order #{order.id}</p>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold">{order.amount}</p>
+                              <p className="font-bold">₹{order.transaction?.amount || 'N/A'}</p>
                               <Badge className="bg-green-100 text-green-700">Delivered</Badge>
                             </div>
                           </div>

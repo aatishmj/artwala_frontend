@@ -20,12 +20,18 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { EditProfileModal } from "@/components/edit-profile-modal"
 import { ProfileCompletionCard } from "@/components/profile-completion-card"
 import { useUserProfile, useUserStats, useAuth } from "@/hooks"
+import { useWishlist } from "@/hooks/useWishlist"
+import { useUserOrders } from "@/hooks/useUserOrders"
+import { useFollowing } from "@/hooks/useFollowing"
 import { getImageUrl } from "@/lib/utils"
 
 export default function UserProfile() {
   const { user } = useAuth()
   const { profile, loading: profileLoading, error: profileError, refetch: refetchProfile } = useUserProfile()
   const { stats, loading: statsLoading, refetch: refetchStats } = useUserStats()
+  const { wishlist, loading: wishlistLoading } = useWishlist()
+  const { orders, loading: ordersLoading } = useUserOrders()
+  const { following, loading: followingLoading } = useFollowing()
 
   if (profileLoading || statsLoading) {
     return (
@@ -58,56 +64,9 @@ export default function UserProfile() {
     orders: stats?.stats.orders_count || 0,
   }
 
-  const savedArtworks = [
-    {
-      id: 1,
-      title: "Sunset Dreams",
-      artist: "Priya Sharma",
-      image: "/placeholder.svg?height=200&width=200",
-      price: "₹15,000",
-    },
-    {
-      id: 2,
-      title: "Urban Rhythm",
-      artist: "Arjun Patel",
-      image: "/placeholder.svg?height=200&width=200",
-      price: "₹8,500",
-    },
-    {
-      id: 3,
-      title: "Digital Mandala",
-      artist: "Maya Singh",
-      image: "/placeholder.svg?height=200&width=200",
-      price: "₹12,000",
-    },
-  ]
 
-  const purchaseHistory = [
-    {
-      id: 1,
-      artwork: "Morning Glory",
-      artist: "Ravi Kumar",
-      amount: "₹18,000",
-      date: "Dec 15, 2024",
-      status: "Delivered",
-    },
-    {
-      id: 2,
-      artwork: "Abstract Thoughts",
-      artist: "Neha Gupta",
-      amount: "₹9,500",
-      date: "Nov 28, 2024",
-      status: "Delivered",
-    },
-    {
-      id: 3,
-      artwork: "Nature's Call",
-      artist: "Amit Singh",
-      amount: "₹22,000",
-      date: "Nov 10, 2024",
-      status: "Delivered",
-    },
-  ]
+
+
 
   return (
     <div key={`profile-${profile.id}-${profile.profile_image}`} className="min-h-screen bg-gradient-to-br from-pastel-rose to-pastel-sage dark:bg-gray-900">
@@ -227,111 +186,123 @@ export default function UserProfile() {
               </TabsList>
 
           <TabsContent value="saved">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {savedArtworks.map((artwork) => (
-                <Card
-                  key={artwork.id}
-                  className="group hover:shadow-lg transition-shadow bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-                >
-                  <div className="relative">
-                    <img
-                      src={artwork.image || "/placeholder.svg"}
-                      alt={artwork.title}
-                      className="w-full h-48 object-cover rounded-t-lg"
-                    />
-                    <div className="absolute top-2 right-2">
-                      <Button variant="secondary" size="sm" className="bg-black/50 text-white hover:bg-black/70">
-                        <Bookmark className="w-4 h-4 fill-current" />
-                      </Button>
-                    </div>
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold mb-1">{artwork.title}</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">by {artwork.artist}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-green-600 dark:text-green-400">{artwork.price}</span>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                        >
-                          Buy
+            {wishlistLoading ? (
+              <div className="text-center py-8">Loading saved artworks...</div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {wishlist.map((item) => (
+                  <Card
+                    key={item.id}
+                    className="group hover:shadow-lg transition-shadow bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                  >
+                    <div className="relative">
+                      <img
+                        src={getImageUrl(item.artwork.image) || "/placeholder.svg"}
+                        alt={item.artwork.title}
+                        className="w-full h-48 object-cover rounded-t-lg"
+                      />
+                      <div className="absolute top-2 right-2">
+                        <Button variant="secondary" size="sm" className="bg-black/50 text-white hover:bg-black/70">
+                          <Bookmark className="w-4 h-4 fill-current" />
                         </Button>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold mb-1">{item.artwork.title}</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">by {item.artwork.artist.first_name} {item.artwork.artist.last_name}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-green-600 dark:text-green-400">₹{item.artwork.price}</span>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                          >
+                            Buy
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="purchases">
-            <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
-              <CardHeader>
-                <CardTitle>Purchase History</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {purchaseHistory.map((purchase) => (
-                    <div
-                      key={purchase.id}
-                      className="flex items-center justify-between p-4 border border-slate-200 dark:border-slate-700 rounded-lg"
-                    >
-                      <div>
-                        <h4 className="font-medium">{purchase.artwork}</h4>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">by {purchase.artist}</p>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">{purchase.date}</p>
+            {ordersLoading ? (
+              <div className="text-center py-8">Loading purchase history...</div>
+            ) : (
+              <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                <CardHeader>
+                  <CardTitle>Purchase History</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {orders.map((order) => (
+                      <div
+                        key={order.id}
+                        className="flex items-center justify-between p-4 border border-slate-200 dark:border-slate-700 rounded-lg"
+                      >
+                        <div>
+                          <h4 className="font-medium">{order.artwork.title}</h4>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">by {order.artwork.artist.first_name} {order.artwork.artist.last_name}</p>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">{new Date(order.created_at).toLocaleDateString()}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold">₹{order.transaction?.amount || order.artwork.price}</p>
+                          <Badge
+                            variant="secondary"
+                            className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+                          >
+                            {order.status}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-bold">{purchase.amount}</p>
-                        <Badge
-                          variant="secondary"
-                          className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
-                        >
-                          {purchase.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="following">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card
-                  key={i}
-                  className="hover:shadow-lg transition-shadow bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-                >
-                  <CardContent className="p-6 text-center">
-                    <Avatar className="w-20 h-20 mx-auto mb-4">
-                      <AvatarImage src={`/placeholder.svg?height=80&width=80`} />
-                      <AvatarFallback>A{i}</AvatarFallback>
-                    </Avatar>
-                    <h3 className="font-semibold mb-1">Artist Name {i}</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">@artist{i}</p>
-                    <div className="flex items-center justify-center gap-4 text-sm mb-4">
-                      <div className="text-center">
-                        <div className="font-medium">234</div>
-                        <div className="text-slate-600 dark:text-slate-400">Artworks</div>
+            {followingLoading ? (
+              <div className="text-center py-8">Loading following...</div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {following.map((user) => (
+                  <Card
+                    key={user.id}
+                    className="hover:shadow-lg transition-shadow bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                  >
+                    <CardContent className="p-6 text-center">
+                      <Avatar className="w-20 h-20 mx-auto mb-4">
+                        <AvatarImage src={getImageUrl(user.profile_image)} />
+                        <AvatarFallback>{user.first_name?.[0]}{user.last_name?.[0]}</AvatarFallback>
+                      </Avatar>
+                      <h3 className="font-semibold mb-1">{user.full_name || user.username}</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">@{user.username}</p>
+                      <div className="flex items-center justify-center gap-4 text-sm mb-4">
+                        <div className="text-center">
+                          <div className="font-medium">{user.stats?.artworks_count || 0}</div>
+                          <div className="text-slate-600 dark:text-slate-400">Artworks</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="font-medium">{user.stats?.followers_count || 0}</div>
+                          <div className="text-slate-600 dark:text-slate-400">Followers</div>
+                        </div>
                       </div>
-                      <div className="text-center">
-                        <div className="font-medium">1.2K</div>
-                        <div className="text-slate-600 dark:text-slate-400">Followers</div>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" className="w-full">
-                      Following
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                      <Button variant="outline" size="sm" className="w-full">
+                        Following
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
             </Tabs>
           </div>

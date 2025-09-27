@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -27,83 +27,43 @@ import {
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/user-menu"
+import { apiClient } from "@/lib/api"
+import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 export default function ArtistOrdersPage() {
-  const [orders, setOrders] = useState([
-    {
-      id: "ORD-001",
-      artwork: "Sunset Dreams",
-      artworkImage: "/placeholder.svg?height=80&width=80",
-      buyer: {
-        name: "Rahul Kumar",
-        email: "rahul@example.com",
-        avatar: "/placeholder.svg?height=40&width=40",
-      },
-      amount: "₹15,000",
-      commission: "₹1,500",
-      netAmount: "₹13,500",
-      status: "delivered",
-      orderDate: "Dec 15, 2024",
-      deliveryDate: "Dec 20, 2024",
-      shippingAddress: "123 Main St, Mumbai, Maharashtra 400001",
-      paymentStatus: "completed",
-    },
-    {
-      id: "ORD-002",
-      artwork: "Urban Rhythm",
-      artworkImage: "/placeholder.svg?height=80&width=80",
-      buyer: {
-        name: "Priya Singh",
-        email: "priya@example.com",
-        avatar: "/placeholder.svg?height=40&width=40",
-      },
-      amount: "₹8,500",
-      commission: "₹850",
-      netAmount: "₹7,650",
-      status: "shipped",
-      orderDate: "Dec 18, 2024",
-      estimatedDelivery: "Dec 25, 2024",
-      shippingAddress: "456 Park Ave, Delhi, Delhi 110001",
-      paymentStatus: "completed",
-      trackingId: "TRK987654321",
-    },
-    {
-      id: "ORD-003",
-      artwork: "Digital Mandala",
-      artworkImage: "/placeholder.svg?height=80&width=80",
-      buyer: {
-        name: "Arjun Patel",
-        email: "arjun@example.com",
-        avatar: "/placeholder.svg?height=40&width=40",
-      },
-      amount: "₹12,000",
-      commission: "₹1,200",
-      netAmount: "₹10,800",
-      status: "processing",
-      orderDate: "Dec 20, 2024",
-      estimatedDelivery: "Dec 28, 2024",
-      shippingAddress: "789 Garden St, Bangalore, Karnataka 560001",
-      paymentStatus: "pending",
-    },
-    {
-      id: "ORD-004",
-      artwork: "Morning Glory",
-      artworkImage: "/placeholder.svg?height=80&width=80",
-      buyer: {
-        name: "Maya Sharma",
-        email: "maya@example.com",
-        avatar: "/placeholder.svg?height=40&width=40",
-      },
-      amount: "₹18,000",
-      commission: "₹1,800",
-      netAmount: "₹16,200",
-      status: "confirmed",
-      orderDate: "Dec 22, 2024",
-      estimatedDelivery: "Dec 30, 2024",
-      shippingAddress: "321 Beach Rd, Chennai, Tamil Nadu 600001",
-      paymentStatus: "completed",
-    },
-  ])
+  const router = useRouter()
+  const [orders, setOrders] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        setLoading(true)
+        const data = await apiClient.getArtistOrders()
+        setOrders(data)
+      } catch (err: any) {
+        setError(err.message || 'Failed to load orders')
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchOrders()
+  }, [])
+
+  const updateOrderStatus = async (orderId: number, status: string) => {
+    try {
+      await apiClient.updateOrderStatus(orderId, status)
+      setOrders(prev => prev.map(order =>
+        order.id === orderId ? { ...order, status } : order
+      ))
+      toast.success(`Order status updated to ${status}`)
+    } catch (err: any) {
+      console.error("Failed to update status:", err)
+      toast.error(err.message || "Failed to update status")
+    }
+  }
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -136,11 +96,14 @@ export default function ArtistOrdersPage() {
   }
 
   const totalRevenue = orders.reduce(
-    (sum, order) => sum + Number.parseFloat(order.netAmount.replace("₹", "").replace(",", "")),
+    (sum, order) => sum + Number(order.net_amount),
     0,
   )
   const pendingOrders = orders.filter((order) => order.status === "processing" || order.status === "confirmed").length
   const completedOrders = orders.filter((order) => order.status === "delivered").length
+
+  if (loading) return <div className="flex justify-center items-center h-screen">Loading...</div>
+  if (error) return <div className="flex justify-center items-center h-screen text-red-500">{error}</div>
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50 dark:from-gray-900 dark:to-purple-900/20">
@@ -310,27 +273,27 @@ export default function ArtistOrdersPage() {
                     <CardContent className="p-6">
                       <div className="flex items-start gap-4">
                         <img
-                          src={order.artworkImage || "/placeholder.svg"}
-                          alt={order.artwork}
+                          src={order.artwork.image || "/placeholder.svg"}
+                          alt={order.artwork.title}
                           className="w-20 h-20 rounded-lg object-cover"
                         />
                         <div className="flex-1">
                           <div className="flex items-start justify-between mb-3">
                             <div>
-                              <h3 className="font-semibold text-lg">{order.artwork}</h3>
+                              <h3 className="font-semibold text-lg">{order.artwork.title}</h3>
                               <p className="text-sm text-muted-foreground">Order #{order.id}</p>
                               <div className="flex items-center gap-2 mt-1">
                                 <Avatar className="w-6 h-6">
-                                  <AvatarImage src={order.buyer.avatar || "/placeholder.svg"} />
-                                  <AvatarFallback>{order.buyer.name[0]}</AvatarFallback>
+                                  <AvatarImage src={order.buyer.profile_image || "/placeholder.svg"} />
+                                  <AvatarFallback>{order.buyer.first_name[0]}</AvatarFallback>
                                 </Avatar>
-                                <span className="text-sm">{order.buyer.name}</span>
+                                <span className="text-sm">{order.buyer.first_name} {order.buyer.last_name}</span>
                               </div>
                             </div>
                             <div className="text-right">
-                              <p className="font-bold text-lg">{order.amount}</p>
+                              <p className="font-bold text-lg">₹{order.artwork.price}</p>
                               <p className="text-sm text-muted-foreground">Commission: {order.commission}</p>
-                              <p className="text-sm font-medium text-green-600">Net: {order.netAmount}</p>
+                              <p className="text-sm font-medium text-green-600">Net: {order.net_amount}</p>
                               <Badge className={`mt-1 ${getStatusColor(order.status)}`}>
                                 {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                               </Badge>
@@ -341,55 +304,35 @@ export default function ArtistOrdersPage() {
                             <div>
                               <div className="flex items-center gap-1 mb-1">
                                 <Calendar className="w-4 h-4" />
-                                <span>Ordered: {order.orderDate}</span>
+                                <span>Ordered: {new Date(order.created_at).toLocaleDateString()}</span>
                               </div>
-                              {order.deliveryDate && (
-                                <div className="flex items-center gap-1">
-                                  <CheckCircle className="w-4 h-4" />
-                                  <span>Delivered: {order.deliveryDate}</span>
-                                </div>
-                              )}
-                              {order.estimatedDelivery && !order.deliveryDate && (
-                                <div className="flex items-center gap-1">
-                                  <Clock className="w-4 h-4" />
-                                  <span>Est. delivery: {order.estimatedDelivery}</span>
-                                </div>
-                              )}
                             </div>
                             <div>
                               <div className="flex items-center gap-1 mb-1">
                                 <User className="w-4 h-4" />
-                                <span>{order.buyer.email}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Package className="w-4 h-4" />
-                                <span>Payment: {order.paymentStatus}</span>
+                                <span>{order.buyer.username}</span>
                               </div>
                             </div>
                           </div>
 
                           <div className="border-t pt-3">
-                            <p className="text-sm text-muted-foreground mb-3">
-                              <strong>Shipping Address:</strong> {order.shippingAddress}
-                            </p>
                             <div className="flex items-center gap-3">
-                              {order.trackingId && (
-                                <Button variant="outline" size="sm">
-                                  <Truck className="w-4 h-4 mr-2" />
-                                  Track: {order.trackingId}
-                                </Button>
-                              )}
                               <Button variant="outline" size="sm">
                                 <Eye className="w-4 h-4 mr-2" />
                                 View Details
                               </Button>
-                              <Button variant="outline" size="sm">
+                              <Button variant="outline" size="sm" onClick={() => router.push(`/messages/${order.buyer.id}`)}>
                                 <MessageCircle className="w-4 h-4 mr-2" />
                                 Message Buyer
                               </Button>
                               {order.status === "confirmed" && (
-                                <Button size="sm" className="bg-gradient-to-r from-purple-500 to-pink-500">
+                                <Button size="sm" className="bg-gradient-to-r from-purple-500 to-pink-500" onClick={() => updateOrderStatus(order.id, "shipped")}>
                                   Mark as Shipped
+                                </Button>
+                              )}
+                              {order.status === "shipped" && (
+                                <Button size="sm" className="bg-gradient-to-r from-green-500 to-blue-500" onClick={() => updateOrderStatus(order.id, "delivered")}>
+                                  Mark as Delivered
                                 </Button>
                               )}
                             </div>
@@ -410,19 +353,19 @@ export default function ArtistOrdersPage() {
                         <CardContent className="p-6">
                           <div className="flex items-center gap-4">
                             <img
-                              src={order.artworkImage || "/placeholder.svg"}
-                              alt={order.artwork}
+                              src={order.artwork.image || "/placeholder.svg"}
+                              alt={order.artwork.title}
                               className="w-16 h-16 rounded-lg object-cover"
                             />
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <h3 className="font-semibold">{order.artwork}</h3>
-                                  <p className="text-sm text-muted-foreground">by {order.buyer.name}</p>
+                                  <h3 className="font-semibold">{order.artwork.title}</h3>
+                                  <p className="text-sm text-muted-foreground">by {order.buyer.first_name} {order.buyer.last_name}</p>
                                   <p className="text-sm text-muted-foreground">Order #{order.id}</p>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-bold">{order.netAmount}</p>
+                                  <p className="font-bold">{order.net_amount}</p>
                                   <Badge className={getStatusColor(order.status)}>
                                     {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                                   </Badge>
@@ -445,19 +388,18 @@ export default function ArtistOrdersPage() {
                         <CardContent className="p-6">
                           <div className="flex items-center gap-4">
                             <img
-                              src={order.artworkImage || "/placeholder.svg"}
-                              alt={order.artwork}
+                              src={order.artwork.image || "/placeholder.svg"}
+                              alt={order.artwork.title}
                               className="w-16 h-16 rounded-lg object-cover"
                             />
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <h3 className="font-semibold">{order.artwork}</h3>
-                                  <p className="text-sm text-muted-foreground">to {order.buyer.name}</p>
-                                  <p className="text-sm text-muted-foreground">Tracking: {order.trackingId}</p>
+                                  <h3 className="font-semibold">{order.artwork.title}</h3>
+                                  <p className="text-sm text-muted-foreground">to {order.buyer.first_name} {order.buyer.last_name}</p>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-bold">{order.netAmount}</p>
+                                  <p className="font-bold">{order.net_amount}</p>
                                   <Badge className="bg-blue-100 text-blue-700">Shipped</Badge>
                                 </div>
                               </div>
@@ -478,19 +420,18 @@ export default function ArtistOrdersPage() {
                         <CardContent className="p-6">
                           <div className="flex items-center gap-4">
                             <img
-                              src={order.artworkImage || "/placeholder.svg"}
-                              alt={order.artwork}
+                              src={order.artwork.image || "/placeholder.svg"}
+                              alt={order.artwork.title}
                               className="w-16 h-16 rounded-lg object-cover"
                             />
                             <div className="flex-1">
                               <div className="flex items-center justify-between">
                                 <div>
-                                  <h3 className="font-semibold">{order.artwork}</h3>
-                                  <p className="text-sm text-muted-foreground">to {order.buyer.name}</p>
-                                  <p className="text-sm text-muted-foreground">Delivered on {order.deliveryDate}</p>
+                                  <h3 className="font-semibold">{order.artwork.title}</h3>
+                                  <p className="text-sm text-muted-foreground">to {order.buyer.first_name} {order.buyer.last_name}</p>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-bold">{order.netAmount}</p>
+                                  <p className="font-bold">{order.net_amount}</p>
                                   <Badge className="bg-green-100 text-green-700">Delivered</Badge>
                                 </div>
                               </div>

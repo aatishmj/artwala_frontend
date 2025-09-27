@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 // Types
 export interface User {
@@ -33,8 +33,7 @@ export interface Artwork {
   description: string
   price: string
   image: string
-  // Backend currently returns artist as an id; future enhancement may expand to object
-  artist: number | {
+  artist: {
     id: number
     username: string
     first_name: string
@@ -46,6 +45,9 @@ export interface Artwork {
   dimensions: string
   created_at: string
   is_available: boolean
+  stock: number
+  likes_count?: number
+  view_count?: number
 }
 
 
@@ -70,6 +72,43 @@ export interface WishlistItem {
   id: number
   artwork: Artwork
   added_on: string
+}
+
+export interface Order {
+  id: number
+  artwork: Artwork
+  buyer: User
+  quantity: number
+  status: string
+  created_at: string
+  transaction?: {
+    amount: number
+    payment_status: string
+    payment_method: string
+    timestamp: string
+  }
+  commission: number
+  net_amount: number
+}
+
+export interface CreateOrderData {
+  artwork_id: number
+  quantity: number
+}
+
+export interface Message {
+  id: number
+  sender: User
+  recipient: User
+  content: string
+  timestamp: string
+  is_read: boolean
+}
+
+export interface Conversation {
+  user: User
+  last_message: Message
+  unread_count: number
 }
 
 // Token management
@@ -120,10 +159,11 @@ export const tokenManager = {
 
 // API client with automatic token refresh
 class ApiClient {
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}, retryCount = 0): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`
     const accessToken = tokenManager.getAccessToken()
     const isFormData = options.body instanceof FormData
+    const maxRetries = 3
 
     const config: RequestInit = {
       ...options,
@@ -157,6 +197,14 @@ class ApiClient {
           window.location.href = "/auth/login"
           throw new Error("Authentication failed")
         }
+      }
+
+      // Handle rate limiting (429) with exponential backoff
+      if (response.status === 429 && retryCount < maxRetries) {
+        const delay = Math.pow(2, retryCount) * 1000 // Exponential backoff: 1s, 2s, 4s
+        console.warn(`Rate limited (429). Retrying in ${delay}ms... (attempt ${retryCount + 1}/${maxRetries})`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return this.request<T>(endpoint, options, retryCount + 1)
       }
 
       if (!response.ok) {
@@ -247,6 +295,10 @@ class ApiClient {
 
   async getProfile(): Promise<User> {
     return this.request<User>("/api/profile/")
+  }
+
+  async getPublicProfile(userId: number): Promise<User> {
+    return this.request<User>(`/api/profile/${userId}/`)
   }
 
   async updateProfile(data: Partial<User>): Promise<User> {
@@ -384,35 +436,55 @@ class ApiClient {
   }
 
   // Artist recommendations
-  async getArtistRecommendations(): Promise<any> {
-    return this.request("/api/artists/recommendations/")
+  async getArtistRecommendations(): Promise<{ data: any }> {
+    return this.get("/api/artists/recommendations/")
+  }
+
+  // Categories
+  async getCategories(): Promise<{ data: string[] }> {
+    return this.get("/api/categories/")
+  }
+
+  // Orders
+  async createOrder(data: CreateOrderData): Promise<Order> {
+    return this.request<Order>("/api/orders/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getUserOrders(): Promise<Order[]> {
+    return this.request<Order[]>("/api/user/orders/")
+  }
+
+  async getArtistOrders(): Promise<Order[]> {
+    return this.request<Order[]>("/api/artist/orders/")
+  }
+
+  async updateOrderStatus(id: number, status: string): Promise<Order> {
+    return this.request<Order>(`/api/orders/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    })
+  }
+
+  // Messages
+  async getMessages(recipientId: number): Promise<Message[]> {
+    return this.request<Message[]>(`/api/messages/${recipientId}/`)
+  }
+
+  async sendMessage(recipientId: number, content: string): Promise<Message> {
+    return this.request<Message>(`/api/messages/${recipientId}/`, {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    })
+  }
+
+  async getConversations(): Promise<User[]> {
+    return this.request<User[]>("/api/messages/")
   }
 }
 
 
 export const apiClient = new ApiClient()
-
-// utils/api.ts
-// utils/api.ts
-export async function fetchWishlist() {
-  const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null
-
-  if (!token) throw new Error("No access token found")
-
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000"}/api/wishlist/`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    credentials: "include", // optional: include cookies if needed
-  })
-
-  if (!res.ok) {
-    const errorText = await res.text()
-    throw new Error(`Failed to fetch wishlist: ${res.status} - ${errorText}`)
-  }
-
-  return res.json()
-}
-
 

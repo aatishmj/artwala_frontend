@@ -2,50 +2,21 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
 import { Search, Home, Compass, User, ShoppingBag, Palette, Eye, Bookmark, Trash2 } from "lucide-react"
 import Link from "next/link"
 import { UserMenu } from "@/components/user-menu"
 
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useWishlist } from "@/hooks/useWishlist"
+import { getImageUrl } from "@/lib/utils"
 
 export default function SavedPage() {
-  const [savedItems, setSavedItems] = useState([
-    {
-      id: 1,
-      title: "Sunset Dreams",
-      artist: "Priya Sharma",
-      image: "/placeholder.svg?height=200&width=200",
-      price: "₹15,000",
-      savedDate: "2 days ago",
-      category: "Painting",
-    },
-    {
-      id: 2,
-      title: "Urban Rhythm",
-      artist: "Arjun Patel",
-      image: "/placeholder.svg?height=200&width=200",
-      price: "₹8,500",
-      savedDate: "5 days ago",
-      category: "Sculpture",
-    },
-    {
-      id: 3,
-      title: "Digital Mandala",
-      artist: "Maya Singh",
-      image: "/placeholder.svg?height=200&width=200",
-      price: "₹12,000",
-      savedDate: "1 week ago",
-      category: "Digital Art",
-    },
-  ])
-
-  const removeSaved = (id: number) => {
-    setSavedItems(savedItems.filter((item) => item.id !== id))
-  }
+  const { wishlist, loading, error, removeFromWishlist } = useWishlist()
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:to-purple-900/20">
@@ -126,10 +97,27 @@ export default function SavedPage() {
           <div className="lg:col-span-3">
             <div className="mb-6">
               <h1 className="text-3xl font-bold mb-2">Saved Artworks</h1>
-              <p className="text-muted-foreground">Your collection of saved artworks ({savedItems.length} items)</p>
+              <p className="text-muted-foreground">Your collection of saved artworks ({wishlist.length} items)</p>
             </div>
 
-            {savedItems.length === 0 ? (
+            {loading ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <Skeleton className="w-full h-48" />
+                    <CardContent className="p-4">
+                      <Skeleton className="h-4 w-3/4 mb-2" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : error ? (
+              <div className="text-center py-8">
+                <p className="text-red-600 dark:text-red-400">Failed to load saved artworks</p>
+                <Button onClick={() => window.location.reload()}>Try Again</Button>
+              </div>
+            ) : wishlist.length === 0 ? (
               <Card className="text-center py-12">
                 <CardContent>
                   <Bookmark className="w-16 h-16 mx-auto mb-4 text-gray-400" />
@@ -144,17 +132,17 @@ export default function SavedPage() {
               </Card>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {savedItems.map((item) => (
+                {wishlist.map((item) => (
                   <Card key={item.id} className="group hover:shadow-lg transition-shadow">
                     <div className="relative">
                       <img
-                        src={item.image || "/placeholder.svg"}
-                        alt={item.title}
+                        src={getImageUrl(item.artwork.image) || "/placeholder.svg"}
+                        alt={item.artwork.title}
                         className="w-full h-48 object-cover rounded-t-lg"
                       />
                       <div className="absolute top-2 left-2">
                         <Badge variant="secondary" className="bg-black/50 text-white">
-                          {item.category}
+                          {item.artwork.category}
                         </Badge>
                       </div>
                       <div className="absolute top-2 right-2 flex gap-2">
@@ -162,18 +150,18 @@ export default function SavedPage() {
                           variant="secondary"
                           size="sm"
                           className="bg-black/50 text-white hover:bg-black/70"
-                          onClick={() => removeSaved(item.id)}
+                          onClick={() => removeFromWishlist(item.artwork.id)}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
                     <CardContent className="p-4">
-                      <h3 className="font-semibold mb-1">{item.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">by {item.artist}</p>
-                      <p className="text-xs text-muted-foreground mb-3">Saved {item.savedDate}</p>
+                      <h3 className="font-semibold mb-1">{item.artwork.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-2">by {item.artwork.artist.first_name} {item.artwork.artist.last_name}</p>
+                      <p className="text-xs text-muted-foreground mb-3">Saved {new Date(item.added_on).toLocaleDateString()}</p>
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-green-600">{item.price}</span>
+                        <span className="font-bold text-green-600">₹{item.artwork.price}</span>
                         <div className="flex gap-2">
                           <Button variant="outline" size="sm">
                             <Eye className="w-4 h-4" />
