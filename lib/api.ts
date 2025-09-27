@@ -13,6 +13,7 @@ export interface User {
   bio?: string
   location?: string
   website?: string
+  membership_statuse?:boolean 
   instagram_handle?: string
   twitter_handle?: string
   artist_since?: string

@@ -1,21 +1,23 @@
 "use client"
-
-import React from "react"
 import Link from "next/link"
-import { 
-  ArrowUpRight, 
-  BarChart3, 
-  Calendar, 
-  DollarSign, 
-  Eye, 
-  Heart, 
-  MessageSquare, 
-  Palette, 
-  Settings, 
-  ShoppingBag, 
-  TrendingUp, 
-  Upload, 
-  Users 
+import type React from "react"
+
+import {
+  ArrowUpRight,
+  BarChart3,
+  Calendar,
+  DollarSign,
+  Eye,
+  Heart,
+  Lock,
+  MessageSquare,
+  Palette,
+  Settings,
+  ShoppingBag,
+  Star,
+  TrendingUp,
+  Upload,
+  Users,
 } from "lucide-react"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -36,6 +38,8 @@ export default function ArtistDashboard() {
   const { stats, loading: statsLoading, error: statsError } = useUserStats()
   const { recommendations, loading: recommendationsLoading } = useArtistRecommendations()
   const { artworks, loading: artworksLoading, prependArtwork } = useArtworks({ limit: 6 })
+  const hasPremiumMembership = profile?.membership_statuse === false
+
 
   if (profileLoading || statsLoading) {
     return (
@@ -81,6 +85,27 @@ export default function ArtistDashboard() {
   // Use real artworks (latest) from API
   const recentArtworks = artworks
 
+  const PremiumFeature = ({
+    children,
+    disabled = false,
+    title,
+  }: { children: React.ReactNode; disabled?: boolean; title?: string }) => {
+    if (!hasPremiumMembership && disabled) {
+      return (
+        <div className="relative">
+          <div className="opacity-0 pointer-events-none">{children}</div>
+          <div className="absolute inset-0 flex items-center justify-center bg-white/95 dark:bg-gray-800/95 rounded-lg border">
+            <div className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-lg border flex items-center gap-2">
+              <Lock className="w-4 h-4 text-purple-600" />
+              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Premium Feature</span>
+            </div>
+          </div>
+        </div>
+      )
+    }
+    return <>{children}</>
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-pastel-peach to-pastel-mint dark:bg-gray-900">
       {/* Header */}
@@ -117,17 +142,20 @@ export default function ArtistDashboard() {
               <CardContent className="p-4">
                 <div className="text-center mb-6">
                   <Avatar className="w-20 h-20 mx-auto mb-3">
-                    <AvatarImage src={getImageUrl(profile.profile_image)} />
-                    <AvatarFallback>{profile.first_name?.[0]}{profile.last_name?.[0]}</AvatarFallback>
+                    <AvatarImage src={getImageUrl(profile.profile_image) || "/placeholder.svg"} />
+                    <AvatarFallback>
+                      {profile.first_name?.[0]}
+                      {profile.last_name?.[0]}
+                    </AvatarFallback>
                   </Avatar>
                   <h3 className="font-semibold">{profile.full_name || profile.username}</h3>
                   <p className="text-sm text-muted-foreground">@{profile.username}</p>
                   <div className="mt-3">
                     <div className="flex items-center justify-between text-sm mb-1">
                       <span>Profile Completion</span>
-                                            <span>{stats.profile_completion.percentage || 0}%</span>
+                      <span>{stats.profile_completion.percentage || 0}%</span>
                     </div>
-                                        <Progress value={stats.profile_completion.percentage || 0} className="h-2" />
+                    <Progress value={stats.profile_completion.percentage || 0} className="h-2" />
                   </div>
                 </div>
 
@@ -138,26 +166,32 @@ export default function ArtistDashboard() {
                       Dashboard
                     </Link>
                   </Button>
+                  <PremiumFeature disabled={true}>
+                    <Button variant="ghost" className="w-full justify-start" asChild>
+                      <Link href="/artist/artworks">
+                        <Palette className="w-4 h-4 mr-3" />
+                        My Artworks
+                      </Link>
+                    </Button>
+                  </PremiumFeature>
+                  <PremiumFeature disabled={true}>
+                    <Button variant="ghost" className="w-full justify-start" asChild>
+                      <Link href="/artist/orders">
+                        <ShoppingBag className="w-4 h-4 mr-3" />
+                        Orders
+                      </Link>
+                    </Button>
+                  </PremiumFeature>
+                  <PremiumFeature disabled={true}>
+                    <Button variant="ghost" className="w-full justify-start" asChild>
+                      <Link href="/artist/messages">
+                        <MessageSquare className="w-4 h-4 mr-3" />
+                        Messages
+                      </Link>
+                    </Button>
+                  </PremiumFeature>
                   <Button variant="ghost" className="w-full justify-start" asChild>
-                    <Link href="/artist/artworks">
-                      <Palette className="w-4 h-4 mr-3" />
-                      My Artworks
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start" asChild>
-                    <Link href="/artist/orders">
-                      <ShoppingBag className="w-4 h-4 mr-3" />
-                      Orders
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start" asChild>
-                    <Link href="/artist/messages">
-                      <MessageSquare className="w-4 h-4 mr-3" />
-                      Messages
-                    </Link>
-                  </Button>
-                  <Button variant="ghost" className="w-full justify-start" asChild>
-                    <Link href="/artist/profile">
+                    <Link href="/artist/profile" className="text-foreground hover:text-foreground">
                       <Settings className="w-4 h-4 mr-3" />
                       Settings
                     </Link>
@@ -185,26 +219,26 @@ export default function ArtistDashboard() {
                       </div>
                     ))}
                   </div>
-                ) : recommendations?.trending_artists.slice(0, 4).map((artist) => (
-                  <div key={artist.id} className="flex items-center justify-between mb-3 last:mb-0">
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={getImageUrl(artist.profile_image)} />
-                        <AvatarFallback>{artist.full_name?.[0] || artist.username[0]}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">{artist.full_name || artist.username}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {artist.stats?.followers_count || 0} followers
-                        </p>
+                ) : (
+                  recommendations?.trending_artists.slice(0, 4).map((artist) => (
+                    <div key={artist.id} className="flex items-center justify-between mb-3 last:mb-0">
+                      <div className="flex items-center space-x-3">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={getImageUrl(artist.profile_image) || "/placeholder.svg"} />
+                          <AvatarFallback>{artist.full_name?.[0] || artist.username[0]}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium">{artist.full_name || artist.username}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {artist.stats?.followers_count || 0} followers
+                          </p>
+                        </div>
                       </div>
+                      <Button variant="outline" size="sm">
+                        Follow
+                      </Button>
                     </div>
-                    <Button variant="outline" size="sm">
-                      Follow
-                    </Button>
-                  </div>
-                )) || (
-                  <p className="text-sm text-muted-foreground">No recommendations available</p>
+                  )) || <p className="text-sm text-muted-foreground">No recommendations available</p>
                 )}
               </CardContent>
             </Card>
@@ -219,27 +253,88 @@ export default function ArtistDashboard() {
 
             {/* Quick Actions */}
             <div className="grid grid-cols-3 gap-4 mb-6">
-              <UploadArtworkModal onUploaded={(art) => prependArtwork(art)}>
+              <PremiumFeature disabled={true}>
+                <UploadArtworkModal onUploaded={(art) => prependArtwork(art)}>
+                  <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 flex items-center gap-3">
+                      <Upload className="w-8 h-8 text-blue-500" />
+                      <div className="font-medium text-foreground">Upload Artwork</div>
+                    </CardContent>
+                  </Card>
+                </UploadArtworkModal>
+              </PremiumFeature>
+
+              <PremiumFeature disabled={true}>
                 <Card className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardContent className="p-4 flex items-center gap-3">
-                    <Upload className="w-8 h-8 text-blue-500" />
-                    <div className="font-medium">Upload Artwork</div>
+                    <Calendar className="w-8 h-8 text-purple-500" />
+                    <div className="font-medium text-foreground">Schedule Post</div>
                   </CardContent>
                 </Card>
-              </UploadArtworkModal>
-              <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <Calendar className="w-8 h-8 text-purple-500" />
-                  <div className="font-medium">Schedule Post</div>
-                </CardContent>
-              </Card>
-              <Card className="cursor-pointer hover:shadow-md transition-shadow">
-                <CardContent className="p-4 flex items-center gap-3">
-                  <MessageSquare className="w-8 h-8 text-green-500" />
-                  <div className="font-medium">View Messages</div>
-                </CardContent>
-              </Card>
+              </PremiumFeature>
+
+              <PremiumFeature disabled={true}>
+                <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <MessageSquare className="w-8 h-8 text-green-500" />
+                    <div className="font-medium text-foreground">View Messages</div>
+                  </CardContent>
+                </Card>
+              </PremiumFeature>
             </div>
+
+{!hasPremiumMembership && (
+  <Card className="mb-6 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/30 dark:to-pink-900/30 border-purple-200 dark:border-purple-700">
+    <CardContent className="p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
+            <Star className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-lg">Upgrade to Premium</h3>
+            <p className="text-sm text-muted-foreground">
+              Unlock exclusive features and grow your art business
+            </p>
+          </div>
+        </div>
+        <Link href="membership">
+          <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white">
+            Upgrade Now - ₹1000/year
+          </Button>
+        </Link>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Lock className="w-4 h-4" />
+          <span>Upload Artwork</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Lock className="w-4 h-4" />
+          <span>Schedule Posts</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Lock className="w-4 h-4" />
+          <span>View Messages</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Lock className="w-4 h-4" />
+          <span>Advanced Analytics</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Lock className="w-4 h-4" />
+          <span>Priority Support</span>
+        </div>
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Lock className="w-4 h-4" />
+          <span>Commission Projects</span>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+)}
+
 
             {/* Stats Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -316,8 +411,14 @@ export default function ArtistDashboard() {
             <Tabs defaultValue="overview" className="space-y-4">
               <TabsList>
                 <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="sales">Sales</TabsTrigger>
-                <TabsTrigger value="artworks">Artworks</TabsTrigger>
+                <TabsTrigger value="sales" disabled={!hasPremiumMembership} className="relative">
+                  Sales
+                  {!hasPremiumMembership && <Lock className="w-3 h-3 ml-1" />}
+                </TabsTrigger>
+                <TabsTrigger value="artworks" disabled={!hasPremiumMembership} className="relative">
+                  Artworks
+                  {!hasPremiumMembership && <Lock className="w-3 h-3 ml-1" />}
+                </TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-4">
@@ -356,18 +457,20 @@ export default function ArtistDashboard() {
                           <p className="text-sm text-muted-foreground">Loading artworks...</p>
                         ) : recentArtworks.length === 0 ? (
                           <p className="text-sm text-muted-foreground">No artworks yet. Upload your first!</p>
-                        ) : recentArtworks.map((artwork: any) => (
-                          <div key={artwork.id} className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium">{artwork.title}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {/* Placeholder metrics until backend provides */}
-                                {new Date(artwork.created_at).toLocaleDateString()}
-                              </p>
+                        ) : (
+                          recentArtworks.map((artwork: any) => (
+                            <div key={artwork.id} className="flex items-center justify-between">
+                              <div>
+                                <p className="font-medium">{artwork.title}</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {/* Placeholder metrics until backend provides */}
+                                  {new Date(artwork.created_at).toLocaleDateString()}
+                                </p>
+                              </div>
+                              <Badge>{"Published"}</Badge>
                             </div>
-                            <Badge>{'Published'}</Badge>
-                          </div>
-                        ))}
+                          ))
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -418,26 +521,39 @@ export default function ArtistDashboard() {
                         <p className="text-sm text-muted-foreground">Loading artworks...</p>
                       ) : recentArtworks.length === 0 ? (
                         <p className="text-sm text-muted-foreground">No artworks yet. Use Upload Artwork to add one.</p>
-                      ) : recentArtworks.map((artwork: any) => (
-                        <div key={artwork.id} className="flex items-center justify-between p-4 border rounded-lg">
-                          <div className="flex items-center gap-4">
-                            <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
-                              {artwork.image && <img src={artwork.image} alt={artwork.title} className="w-full h-full object-cover" />}
+                      ) : (
+                        recentArtworks.map((artwork: any) => (
+                          <div key={artwork.id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center gap-4">
+                              <div className="w-16 h-16 bg-gray-200 rounded-lg overflow-hidden">
+                                {artwork.image && (
+                                  <img
+                                    src={artwork.image || "/placeholder.svg"}
+                                    alt={artwork.title}
+                                    className="w-full h-full object-cover"
+                                  />
+                                )}
+                              </div>
+                              <div>
+                                <h4 className="font-medium">{artwork.title}</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  Added {new Date(artwork.created_at).toLocaleDateString()}
+                                </p>
+                                <Badge className="mt-1">Published</Badge>
+                              </div>
                             </div>
-                            <div>
-                              <h4 className="font-medium">{artwork.title}</h4>
-                              <p className="text-sm text-muted-foreground">
-                                Added {new Date(artwork.created_at).toLocaleDateString()}
-                              </p>
-                              <Badge className="mt-1">Published</Badge>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm">
+                                Edit
+                              </Button>
+                              <Button variant="outline" size="sm">
+                                View
+                                <ArrowUpRight className="w-4 h-4 ml-1" />
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button variant="outline" size="sm">Edit</Button>
-                            <Button variant="outline" size="sm">View<ArrowUpRight className="w-4 h-4 ml-1" /></Button>
-                          </div>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
                   </CardContent>
                 </Card>
