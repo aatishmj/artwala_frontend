@@ -12,6 +12,7 @@ export interface UserProfile {
   phone: string;
   profile_image: string;
   bio: string;
+  membership_statuse: boolean; // 🔹 typo here matches backend for now
   location: string;
   website: string;
   instagram_handle: string;
@@ -51,9 +52,13 @@ export const useUserProfile = (userId?: number) => {
     try {
       setLoading(true);
       setError(null);
-      
+
       const endpoint = userId ? `/api/profile/${userId}/` : '/api/profile/';
       const response = await apiClient.get<UserProfile>(endpoint);
+
+      // 🔎 Debug log here
+      console.log("Profile API response:", response.data);
+
       setProfile(response.data);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to fetch profile');
@@ -65,8 +70,7 @@ export const useUserProfile = (userId?: number) => {
   const updateProfile = async (data: ProfileUpdateData) => {
     try {
       setError(null);
-      const response = await apiClient.patch<UserProfile>('/api/profile/', data);
-      // Immediately update local state with new data
+      const response = await apiClient.patch<UserProfile>('/api/profile/update/', data);
       setProfile(response.data);
       return response.data;
     } catch (err: any) {
@@ -80,9 +84,12 @@ export const useUserProfile = (userId?: number) => {
       setError(null);
       const formData = new FormData();
       formData.append('profile_image', imageFile);
-      
-      const response = await apiClient.post<UserProfile>('/api/profile/image/', formData);
-      // Immediately update local state with new data
+
+      const response = await apiClient.post<UserProfile>('/api/profile/image/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
       setProfile(response.data);
       return response.data;
     } catch (err: any) {

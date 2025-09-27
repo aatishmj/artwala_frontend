@@ -12,6 +12,7 @@ import { UserMenu } from "@/components/user-menu"
 import { apiClient, type WishlistItem } from "@/lib/api"
 import { useAuth } from "@/hooks/useAuth"
 import { toast } from "sonner"
+import { UserSidebar } from "@/components/side-menu"
 
 export default function WishlistPage() {
   const [wishlistItems, setWishlistItems] = useState<WishlistItem[]>([])
@@ -34,14 +35,14 @@ export default function WishlistPage() {
     }
   }
 
-  const removeFromWishlist = async (artworkId: number) => {
+  const handleRemove = async (artworkId: number) => {
     try {
       await apiClient.removeFromWishlist(artworkId)
-      setWishlistItems((items) => items.filter((item) => item.artwork.id !== artworkId))
+      setWishlistItems(prev => prev.filter(item => item.artwork.id !== artworkId))
       toast.success("Removed from wishlist")
     } catch (error) {
       console.error("Failed to remove from wishlist:", error)
-      toast.error("Failed to remove from wishlist")
+      toast.error("Failed to remove item")
     }
   }
 
@@ -73,7 +74,6 @@ export default function WishlistPage() {
                 <span className="font-bold text-lg">ARTWALA</span>
               </Link>
             </div>
-
             <div className="flex items-center gap-4">
               <ThemeToggle />
               <UserMenu />
@@ -82,98 +82,109 @@ export default function WishlistPage() {
         </div>
       </header>
 
+      {/* Main content with sidebar */}
       <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">My Wishlist</h1>
-          <p className="text-slate-600 dark:text-slate-400">
-            {wishlistItems.length} {wishlistItems.length === 1 ? "artwork" : "artworks"} saved
-          </p>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <UserSidebar />
+          </div>
+
+          {/* Wishlist content */}
+          <div className="lg:col-span-3">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold mb-2">My Wishlist</h1>
+              <p className="text-slate-600 dark:text-slate-400">
+                {wishlistItems.length} {wishlistItems.length === 1 ? "artwork" : "artworks"} saved
+              </p>
+            </div>
+
+            {wishlistItems.length === 0 ? (
+              <div className="text-center py-16">
+                <Heart className="w-16 h-16 mx-auto mb-4 text-slate-400" />
+                <h2 className="text-2xl font-semibold mb-2">Your wishlist is empty</h2>
+                <p className="text-slate-600 dark:text-slate-400 mb-6">Start exploring and save artworks you love!</p>
+                <Link href="/user/explore">
+                  <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                    Explore Artworks
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {wishlistItems.map((item) => (
+                  <Card
+                    key={item.id}
+                    className="group hover:shadow-xl transition-all duration-300 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                  >
+                    <div className="relative">
+                      <img
+                        src={item.artwork.image || "/placeholder.svg?height=250&width=300"}
+                        alt={item.artwork.title}
+                        className="w-full h-48 object-cover rounded-t-lg"
+                      />
+                      <div className="absolute top-2 right-2 flex gap-2">
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          className="bg-white/90 hover:bg-white text-red-500 hover:text-red-600"
+                          onClick={() => handleRemove(item.artwork.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                      <div className="absolute bottom-2 left-2">
+                        <Badge variant="secondary" className="bg-white/90 text-slate-800">
+                          {item.artwork.category}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Avatar className="w-6 h-6">
+                          <AvatarImage src={item.artwork.artist.profile_image || "/placeholder.svg"} />
+                          <AvatarFallback className="text-xs">
+                            {item.artwork.artist.first_name}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm text-slate-600 dark:text-slate-400">
+                          {item.artwork.artist.first_name} {item.artwork.artist.last_name}
+                        </span>
+                      </div>
+
+                      <h3 className="font-semibold mb-1 line-clamp-1">{item.artwork.title}</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
+                        {item.artwork.description}
+                      </p>
+
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="font-bold text-green-600 dark:text-green-400">₹{item.artwork.price}</span>
+                        <span className="text-xs text-slate-500">
+                          Added {new Date(item.added_on).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                          <Eye className="w-4 h-4 mr-1" />
+                          View
+                        </Button>
+                        <Button
+                          size="sm"
+                          className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                        >
+                          <ShoppingCart className="w-4 h-4 mr-1" />
+                          Buy
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-
-        {wishlistItems.length === 0 ? (
-          <div className="text-center py-16">
-            <Heart className="w-16 h-16 mx-auto mb-4 text-slate-400" />
-            <h2 className="text-2xl font-semibold mb-2">Your wishlist is empty</h2>
-            <p className="text-slate-600 dark:text-slate-400 mb-6">Start exploring and save artworks you love!</p>
-            <Link href="/user/explore">
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                Explore Artworks
-              </Button>
-            </Link>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {wishlistItems.map((item) => (
-              <Card
-                key={item.id}
-                className="group hover:shadow-xl transition-all duration-300 bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-              >
-                <div className="relative">
-                  <img
-                    src={item.artwork.image || "/placeholder.svg?height=250&width=300"}
-                    alt={item.artwork.title}
-                    className="w-full h-48 object-cover rounded-t-lg"
-                  />
-                  <div className="absolute top-2 right-2 flex gap-2">
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="bg-white/90 hover:bg-white text-red-500 hover:text-red-600"
-                      onClick={() => removeFromWishlist(item.artwork.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                  <div className="absolute bottom-2 left-2">
-                    <Badge variant="secondary" className="bg-white/90 text-slate-800">
-                      {item.artwork.category}
-                    </Badge>
-                  </div>
-                </div>
-
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Avatar className="w-6 h-6">
-                      <AvatarImage src={item.artwork.artist.profile_image || "/placeholder.svg"} />
-                      <AvatarFallback className="text-xs">
-                        {item.artwork.artist.first_name}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm text-slate-600 dark:text-slate-400">
-                      {item.artwork.artist.first_name} {item.artwork.artist.last_name}
-                    </span>
-                  </div>
-
-                  <h3 className="font-semibold mb-1 line-clamp-1">{item.artwork.title}</h3>
-                  <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">
-                    {item.artwork.description}
-                  </p>
-
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="font-bold text-green-600 dark:text-green-400">₹{item.artwork.price}</span>
-                    <span className="text-xs text-slate-500">
-                      Added {new Date(item.added_on).toLocaleDateString()}
-                    </span>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1 bg-transparent">
-                      <Eye className="w-4 h-4 mr-1" />
-                      View
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                    >
-                      <ShoppingCart className="w-4 h-4 mr-1" />
-                      Buy
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
       </div>
     </div>
   )
