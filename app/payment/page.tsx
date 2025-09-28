@@ -23,44 +23,57 @@ export default function PaymentPage() {
   const searchParams = useSearchParams()
 
   useEffect(() => {
-    // Parse URL parameters to get artwork details
-    const artworkId = searchParams.get("artwork")
-    const artworkIds = searchParams.get("artworks")
-    const price = searchParams.get("price")
-    const total = searchParams.get("total")
+    const load = async () => {
+      const artworkId = searchParams.get("artwork")
+      const artworkIds = searchParams.get("artworks")
+      const total = searchParams.get("total")
+      const priceQuery = searchParams.get("price")
 
-    if (artworkIds) {
-      // Multiple artworks
-      const ids = artworkIds.split(",").map((id) => Number.parseInt(id))
-      setOrderSummary({
-        type: "multiple",
-        artworks: ids.map((id) => ({
-          id,
-          title: `Artwork ${id}`,
-          artist: `Artist ${id}`,
-          price: Math.floor(Math.random() * 50000) + 5000,
-          image: `/placeholder.svg?height=100&width=100`,
-        })),
-        total: Number.parseFloat(total || "0"),
-        shipping: 500,
-        tax: Number.parseFloat(total || "0") * 0.18,
-      })
-    } else if (artworkId && price) {
-      // Single artwork
-      setOrderSummary({
-        type: "single",
-        artwork: {
-          id: Number.parseInt(artworkId),
-          title: `Artwork ${artworkId}`,
-          artist: `Artist ${artworkId}`,
-          price: Number.parseFloat(price),
-          image: `/placeholder.svg?height=100&width=100`,
-        },
-        subtotal: Number.parseFloat(price),
-        shipping: 500,
-        tax: Number.parseFloat(price) * 0.18,
-      })
+      try {
+        if (artworkIds) {
+          const ids = artworkIds.split(",").map((id) => Number.parseInt(id.trim())).filter(n => !Number.isNaN(n))
+          if (!ids.length) return
+          const fetched = await Promise.all(ids.map(id => apiClient.getArtwork(id).catch(() => null)))
+          const valid = fetched.filter(Boolean) as any[]
+          if (!valid.length) return
+          const computedTotal = valid.reduce((sum, a) => sum + parseFloat(a.price), 0)
+          setOrderSummary({
+            type: "multiple",
+            artworks: valid.map(a => ({
+              id: a.id,
+              title: a.title,
+              artist: a.artist?.username || `Artist ${a.id}`,
+              price: parseFloat(a.price),
+              image: a.image || `/placeholder.svg?height=100&width=100`,
+            })),
+            total: total ? Number.parseFloat(total) : computedTotal,
+            shipping: 500,
+            tax: (total ? Number.parseFloat(total) : computedTotal) * 0.18,
+          })
+        } else if (artworkId) {
+          const idNum = Number.parseInt(artworkId)
+            if (Number.isNaN(idNum)) return
+          const art = await apiClient.getArtwork(idNum)
+          const price = parseFloat(art.price)
+          setOrderSummary({
+            type: "single",
+            artwork: {
+              id: art.id,
+              title: art.title,
+              artist: art.artist?.username || `Artist ${art.id}`,
+              price,
+              image: art.image || `/placeholder.svg?height=100&width=100`,
+            },
+            subtotal: priceQuery ? Number.parseFloat(priceQuery) : price,
+            shipping: 500,
+            tax: (priceQuery ? Number.parseFloat(priceQuery) : price) * 0.18,
+          })
+        }
+      } catch (e) {
+        console.error('Failed to preload artwork(s):', e)
+      }
     }
+    load()
   }, [searchParams])
 
   const handlePayment = async () => {
@@ -74,15 +87,21 @@ export default function PaymentPage() {
       const artworks = searchParams.get("artworks")
 
       if (artworks) {
-        // Handle multiple artworks - create separate orders
-        const ids = artworks.split(",").map(id => parseInt(id.trim()))
+        const ids = artworks.split(",").map(id => parseInt(id.trim())).filter(n => !Number.isNaN(n))
+        if (!ids.length) throw new Error('No valid artwork ids provided')
         for (const id of ids) {
-          await apiClient.createOrder({ artwork_id: id, quantity: 1 })
+          try {
+            await apiClient.createOrder({ artwork_id: id, quantity: 1 })
+          } catch (err: any) {
+            console.error(`Failed to create order for artwork ${id}:`, err)
+            toast.error(`Could not order artwork #${id}: ${err.message || 'Error'}`)
+          }
         }
-        toast.success("Payment successful for multiple items!")
+        toast.success("Payment processed.")
       } else if (artworkId) {
-        // Single artwork
-        const order = await apiClient.createOrder({ artwork_id: parseInt(artworkId), quantity: 1 })
+        const idNum = parseInt(artworkId)
+        if (Number.isNaN(idNum)) throw new Error('Invalid artwork id')
+        const order = await apiClient.createOrder({ artwork_id: idNum, quantity: 1 })
         toast.success(`Payment successful! Order #${order.id} placed.`)
       } else {
         throw new Error("No artwork specified")

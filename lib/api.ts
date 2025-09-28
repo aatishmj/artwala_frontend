@@ -423,6 +423,10 @@ class ApiClient {
     return this.request<Artwork[]>(`/api/artworks/${qp}`)
   }
 
+  async getArtwork(id: number): Promise<Artwork> {
+    return this.request<Artwork>(`/api/artworks/${id}/`)
+  }
+
   async updateArtwork(id: number, body: Partial<Pick<Artwork,'title'|'description'|'price'>>): Promise<Artwork> {
     const { data } = await this.patch<Artwork>(`/api/artworks/${id}/`, body)
     return data
