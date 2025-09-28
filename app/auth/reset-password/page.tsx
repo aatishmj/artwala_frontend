@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,7 +13,7 @@ import { Palette, ArrowLeft, Loader2, Eye, EyeOff, CheckCircle, XCircle } from "
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 
-export default function ResetPasswordPage() {
+function ResetPasswordInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
@@ -301,5 +301,20 @@ export default function ResetPasswordPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-pink-50 to-orange-100 dark:from-gray-900 dark:via-purple-900/20 dark:to-pink-900/20">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Preparing reset form...</p>
+        </div>
+      </div>
+    }>
+      <ResetPasswordInner />
+    </Suspense>
   )
 }

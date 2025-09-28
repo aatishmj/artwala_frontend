@@ -87,6 +87,41 @@ export interface WishlistItem {
   }
 }
 
+// ---- Orders & Messaging (added to satisfy missing type references) ----
+export interface CreateOrderData {
+  items: { artwork_id: number; quantity: number }[]
+  shipping_address?: string
+  payment_method?: string
+  notes?: string
+}
+
+export interface OrderItem {
+  artwork: Artwork
+  quantity: number
+  price: number
+}
+
+export interface Order {
+  id: number
+  user: number
+  status: string
+  total_amount: number
+  items: OrderItem[]
+  created_at: string
+  updated_at: string
+  payment_status?: string
+  tracking_code?: string
+}
+
+export interface Message {
+  id: number
+  sender: User
+  recipient: User
+  content: string
+  timestamp: string
+  is_read: boolean
+}
+
 
 // Token management
 export const tokenManager = {
@@ -416,12 +451,7 @@ class ApiClient {
     })
     return { data }
   }
-
-
-  async getWishlist(): Promise<WishlistItem[]> {
-  const { data } = await this.get<WishlistItem[]>("/api/wishlist/")
-  return data
-  }
+  // (Removed duplicate getWishlist / addToWishlist / removeFromWishlist definitions below)
 
   // Profile completion details
   async getProfileCompletion(): Promise<any> {
@@ -476,15 +506,6 @@ class ApiClient {
   async getConversations(): Promise<User[]> {
     return this.request<User[]>("/api/messages/")
   }
-
-async removeFromWishlist(artworkId: number): Promise<void> {
-  await this.delete(`/api/wishlist/${artworkId}/`)
-}
-
-async addToWishlist(artworkId: number): Promise<void> {
-  await this.post(`/api/wishlist/`, { artwork_id: artworkId })
-}
-
 }
 
 export const apiClient = new ApiClient()
