@@ -23,7 +23,8 @@ export const useMembership = () => {
         throw new Error('Please login to purchase membership');
       }
 
-      const response = await fetch('/api/membership/purchase/', {
+      // Backend route currently defined without trailing slash; keep consistent
+      const response = await fetch('/api/membership/purchase', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

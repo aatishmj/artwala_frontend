@@ -1,4 +1,8 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://artwala.org";
+// If NEXT_PUBLIC_API_URL is not set we assume the frontend domain reverse-proxies /api to backend.
+// Provide no hard-coded fallback domain so deployments don't accidentally call production from other environments.
+const RAW_API_BASE = process.env.NEXT_PUBLIC_API_URL;
+// Normalize: remove any trailing slashes
+const API_BASE_URL = RAW_API_BASE ? RAW_API_BASE.replace(/\/+$/,'') : '';
 
 // Types
 export interface User {
@@ -88,11 +92,10 @@ export interface WishlistItem {
 }
 
 // ---- Orders & Messaging (added to satisfy missing type references) ----
+// Order creation payload actually expected by backend (OrderCreateView)
 export interface CreateOrderData {
-  items: { artwork_id: number; quantity: number }[]
-  shipping_address?: string
-  payment_method?: string
-  notes?: string
+  artwork_id: number
+  quantity?: number
 }
 
 export interface OrderItem {
@@ -220,25 +223,47 @@ class ApiClient {
       }
 
       if (!response.ok) {
-        // Try to parse error body if present
-        let errorData: any = {}
+        // Parse error body (JSON or text) to expose meaningful details
         let errorMessage = `HTTP error! status: ${response.status}`
         try {
-            // Only attempt to parse if content length isn't zero
-            if (response.status !== 204) {
+          if (response.status !== 204) {
+            const ct = response.headers.get('Content-Type') || ''
+            let errorData: any
+            if (ct.includes('application/json')) {
+              // clone before consuming in case downstream wants raw response later
+              errorData = await response.clone().json()
+            } else {
+              errorData = await response.text()
+            }
 
-              // Handle common DRF error formats
-              if (errorData.detail) {
-                errorMessage = errorData.detail
-              } else if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
-                errorMessage = errorData.non_field_errors[0]
-              } else if (errorData.message) {
-                errorMessage = errorData.message
+            if (errorData) {
+              // DRF / custom patterns
+              if (typeof errorData === 'object') {
+                if (errorData.detail) errorMessage = errorData.detail
+                else if (errorData.error) errorMessage = errorData.error
+                else if (errorData.message) errorMessage = errorData.message
+                else if (errorData.non_field_errors && Array.isArray(errorData.non_field_errors) && errorData.non_field_errors.length) {
+                  errorMessage = errorData.non_field_errors[0]
+                } else {
+                  // Collect first field error if present
+                  const firstKey = Object.keys(errorData)[0]
+                  if (firstKey && Array.isArray(errorData[firstKey])) {
+                    errorMessage = `${firstKey}: ${errorData[firstKey][0]}`
+                  }
+                }
               } else if (typeof errorData === 'string') {
-                errorMessage = errorData
+                // If HTML (starts with <!doctype) provide compact hint instead of dumping markup
+                if (/<!doctype|<html/i.test(errorData)) {
+                  errorMessage = `${errorMessage} (Received HTML error page – likely 404/500 or wrong endpoint)`
+                } else {
+                  errorMessage = errorData
+                }
               }
             }
-        } catch (_) { /* ignore parse errors */ }
+          }
+        } catch (parseErr) {
+          console.warn('Failed to parse error response body', parseErr)
+        }
         throw new Error(errorMessage)
       }
       // DELETE / 204 No Content or empty body handling
@@ -517,7 +542,9 @@ export async function fetchWishlist() {
 
   if (!token) throw new Error("No access token found")
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://artwala.org"}/api/wishlist/`, {
+  // Use the same env variable as the rest of the client (avoid split between NEXT_PUBLIC_API_URL & NEXT_PUBLIC_API_BASE_URL)
+  const base = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://artwala.org"
+  const res = await fetch(`${base}/api/wishlist/`, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
