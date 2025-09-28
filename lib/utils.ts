@@ -18,12 +18,12 @@ export function getImageUrl(imagePath: string | null | undefined): string {
   
   // If it starts with /media/, prepend the backend URL
   if (imagePath.startsWith('/media/')) {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://artwala.org"
     return `${API_BASE_URL}${imagePath}`
   }
   
   // If it's just a filename, assume it's in the media/profiles/ directory
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://artwala.org"
   return `${API_BASE_URL}/media/profiles/${imagePath}`
 }
 
