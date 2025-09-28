@@ -187,15 +187,25 @@ class ApiClient {
       if (!response.ok) {
         // Try to parse error body if present
         let errorData: any = {}
+        let errorMessage = `HTTP error! status: ${response.status}`
         try {
             // Only attempt to parse if content length isn't zero
             if (response.status !== 204) {
-              errorData = await response.json()
+
+              // Handle common DRF error formats
+              if (errorData.detail) {
+                errorMessage = errorData.detail
+              } else if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
+                errorMessage = errorData.non_field_errors[0]
+              } else if (errorData.message) {
+                errorMessage = errorData.message
+              } else if (typeof errorData === 'string') {
+                errorMessage = errorData
+              }
             }
         } catch (_) { /* ignore parse errors */ }
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+        throw new Error(errorMessage)
       }
-
       // DELETE / 204 No Content or empty body handling
       if (response.status === 204) {
         return {} as T
