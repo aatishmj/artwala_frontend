@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://artwala.org"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://72.60.200.27:8000"
 
 // Types
 export interface User {
@@ -496,7 +496,7 @@ export async function fetchWishlist() {
 
   if (!token) throw new Error("No access token found")
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://artwala.org"}/api/wishlist/`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://72.60.200.27:8000"}/api/wishlist/`, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
