@@ -1,5 +1,6 @@
 "use client"
 
+import React from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -56,10 +57,6 @@ export default function UserProfile() {
     saved: stats?.stats.saved_artworks || 0,
     orders: stats?.stats.orders_count || 0,
   }
-
-
-
-
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pastel-rose to-pastel-sage dark:bg-gray-900">
@@ -140,17 +137,17 @@ export default function UserProfile() {
                     {profile.bio || "Art enthusiast and collector passionate about supporting emerging artists."}
                   </p>
 
-                  {stats?.profile_completion !== undefined && stats.profile_completion < 100 && (
+                  {stats?.profile_completion !== undefined && stats.profile_completion.percentage < 100 && (
                     <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
                           Complete your profile
                         </span>
                         <span className="text-sm text-amber-600 dark:text-amber-400">
-                          {Math.round(stats.profile_completion)}%
+                          {Math.round(stats.profile_completion.percentage)}%
                         </span>
                       </div>
-                      <Progress value={stats.profile_completion} className="h-2" />
+                      <Progress value={stats.profile_completion.percentage} className="h-2" />
                     </div>
                   )}
 
@@ -187,41 +184,61 @@ export default function UserProfile() {
           </Card>
 
           {/* Tabs Section */}
-          <Tabs defaultValue="saved" className="space-y-6">
+          <Tabs defaultValue="following" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="saved">Saved Artworks</TabsTrigger>
               <TabsTrigger value="purchases">Purchase History</TabsTrigger>
               <TabsTrigger value="following">Following</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="following">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card
-                  key={i}
-                  className="hover:shadow-lg transition-shadow bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-                >
+            <TabsContent value="saved">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                   <CardContent className="p-6 text-center">
-                    <Avatar className="w-20 h-20 mx-auto mb-4">
-                      <AvatarImage src={`/placeholder.svg?height=80&width=80`} />
-                      <AvatarFallback>A{i}</AvatarFallback>
-                    </Avatar>
-                    <h3 className="font-semibold mb-1">Artist Name {i}</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">@artist{i}</p>
-                    <div className="flex items-center justify-center gap-4 text-sm mb-4">
-                      <div className="text-center">
-                        <div className="font-medium">234</div>
-                        <div className="text-slate-600 dark:text-slate-400">Artworks</div>
+                    <p>No saved artworks yet.</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="purchases">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                  <CardContent className="p-6 text-center">
+                    <p>No purchases yet.</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="following">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <Card
+                    key={i}
+                    className="hover:shadow-lg transition-shadow bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                  >
+                    <CardContent className="p-6 text-center">
+                      <Avatar className="w-20 h-20 mx-auto mb-4">
+                        <AvatarImage src={`/placeholder.svg?height=80&width=80`} />
+                        <AvatarFallback>A{i}</AvatarFallback>
+                      </Avatar>
+                      <h3 className="font-semibold mb-1">Artist Name {i}</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">@artist{i}</p>
+                      <div className="flex items-center justify-center gap-4 text-sm mb-4">
+                        <div className="text-center">
+                          <div className="font-medium">234</div>
+                          <div className="text-slate-600 dark:text-slate-400">Artworks</div>
+                        </div>
+                        <Button variant="outline" size="sm" className="w-full">
+                          Following
+                        </Button>
                       </div>
-                      <Button variant="outline" size="sm" className="w-full">
-                        Following
-                      </Button>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-            )}
-          </TabsContent>
+            </TabsContent>
           </Tabs>
         </div>
       </div>
