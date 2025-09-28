@@ -19,6 +19,7 @@ export default function PaymentPage() {
   const [paymentMethod, setPaymentMethod] = useState("card")
   const [loading, setLoading] = useState(false)
   const [orderSummary, setOrderSummary] = useState<any>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
 
@@ -32,10 +33,10 @@ export default function PaymentPage() {
       try {
         if (artworkIds) {
           const ids = artworkIds.split(",").map((id) => Number.parseInt(id.trim())).filter(n => !Number.isNaN(n))
-          if (!ids.length) return
+          if (!ids.length) { setLoadError('No valid artwork IDs provided.'); return }
           const fetched = await Promise.all(ids.map(id => apiClient.getArtwork(id).catch(() => null)))
           const valid = fetched.filter(Boolean) as any[]
-          if (!valid.length) return
+          if (!valid.length) { setLoadError('None of the specified artworks were found.'); return }
           const computedTotal = valid.reduce((sum, a) => sum + parseFloat(a.price), 0)
           setOrderSummary({
             type: "multiple",
@@ -52,8 +53,9 @@ export default function PaymentPage() {
           })
         } else if (artworkId) {
           const idNum = Number.parseInt(artworkId)
-            if (Number.isNaN(idNum)) return
-          const art = await apiClient.getArtwork(idNum)
+          if (Number.isNaN(idNum)) { setLoadError('Invalid artwork id.'); return }
+          const art = await apiClient.getArtwork(idNum).catch(() => null)
+          if (!art) { setLoadError(`Artwork #${idNum} not found.`); return }
           const price = parseFloat(art.price)
           setOrderSummary({
             type: "single",
@@ -68,9 +70,12 @@ export default function PaymentPage() {
             shipping: 500,
             tax: (priceQuery ? Number.parseFloat(priceQuery) : price) * 0.18,
           })
+        } else {
+          setLoadError('No artwork specified in the URL.')
         }
-      } catch (e) {
+      } catch (e: any) {
         console.error('Failed to preload artwork(s):', e)
+        setLoadError(e?.message || 'Failed to load artwork data.')
       }
     }
     load()
@@ -114,6 +119,19 @@ export default function PaymentPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 p-6 text-center">
+        <h1 className="text-2xl font-semibold">Unable to proceed</h1>
+        <p className="text-slate-600 dark:text-slate-400 max-w-md">{loadError}</p>
+        <div className="flex gap-4">
+          <Button onClick={() => router.back()} variant="outline">Go Back</Button>
+          <Button onClick={() => router.push('/user/feed')}>Browse Artworks</Button>
+        </div>
+      </div>
+    )
   }
 
   if (!orderSummary) {
