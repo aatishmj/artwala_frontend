@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 // Types
 export interface User {
@@ -13,6 +13,7 @@ export interface User {
   bio?: string
   location?: string
   website?: string
+  membership_statuse?:boolean 
   instagram_handle?: string
   twitter_handle?: string
   artist_since?: string
@@ -33,8 +34,7 @@ export interface Artwork {
   description: string
   price: string
   image: string
-  // Backend currently returns artist as an id; future enhancement may expand to object
-  artist: number | {
+  artist: {
     id: number
     username: string
     first_name: string
@@ -46,6 +46,9 @@ export interface Artwork {
   dimensions: string
   created_at: string
   is_available: boolean
+  stock: number
+  likes_count?: number
+  view_count?: number
 }
 
 
@@ -68,9 +71,22 @@ export interface RegisterData {
 
 export interface WishlistItem {
   id: number
-  artwork: Artwork
   added_on: string
+  artwork: {
+    id: number
+    title: string
+    description: string
+    price: number
+    category: string
+    image: string
+    artist: {
+      first_name: string
+      last_name: string
+      profile_image?: string
+    }
+  }
 }
+
 
 // Token management
 export const tokenManager = {
@@ -120,10 +136,11 @@ export const tokenManager = {
 
 // API client with automatic token refresh
 class ApiClient {
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}, retryCount = 0): Promise<T> {
     const url = `${API_BASE_URL}${endpoint}`
     const accessToken = tokenManager.getAccessToken()
     const isFormData = options.body instanceof FormData
+    const maxRetries = 3
 
     const config: RequestInit = {
       ...options,
@@ -157,6 +174,14 @@ class ApiClient {
           window.location.href = "/auth/login"
           throw new Error("Authentication failed")
         }
+      }
+
+      // Handle rate limiting (429) with exponential backoff
+      if (response.status === 429 && retryCount < maxRetries) {
+        const delay = Math.pow(2, retryCount) * 1000 // Exponential backoff: 1s, 2s, 4s
+        console.warn(`Rate limited (429). Retrying in ${delay}ms... (attempt ${retryCount + 1}/${maxRetries})`)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return this.request<T>(endpoint, options, retryCount + 1)
       }
 
       if (!response.ok) {
@@ -247,6 +272,10 @@ class ApiClient {
 
   async getProfile(): Promise<User> {
     return this.request<User>("/api/profile/")
+  }
+
+  async getPublicProfile(userId: number): Promise<User> {
+    return this.request<User>(`/api/profile/${userId}/`)
   }
 
   async updateProfile(data: Partial<User>): Promise<User> {
@@ -378,17 +407,75 @@ class ApiClient {
     return { data }
   }
 
+
+  async getWishlist(): Promise<WishlistItem[]> {
+  const { data } = await this.get<WishlistItem[]>("/api/wishlist/")
+  return data
+  }
+
   // Profile completion details
   async getProfileCompletion(): Promise<any> {
     return this.request("/api/profile/completion/")
   }
 
   // Artist recommendations
-  async getArtistRecommendations(): Promise<any> {
-    return this.request("/api/artists/recommendations/")
+  async getArtistRecommendations(): Promise<{ data: any }> {
+    return this.get("/api/artists/recommendations/")
   }
+
+  // Categories
+  async getCategories(): Promise<{ data: string[] }> {
+    return this.get("/api/categories/")
+  }
+
+  // Orders
+  async createOrder(data: CreateOrderData): Promise<Order> {
+    return this.request<Order>("/api/orders/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    })
+  }
+
+  async getUserOrders(): Promise<Order[]> {
+    return this.request<Order[]>("/api/user/orders/")
+  }
+
+  async getArtistOrders(): Promise<Order[]> {
+    return this.request<Order[]>("/api/artist/orders/")
+  }
+
+  async updateOrderStatus(id: number, status: string): Promise<Order> {
+    return this.request<Order>(`/api/orders/${id}/`, {
+      method: "PATCH",
+      body: JSON.stringify({ status }),
+    })
+  }
+
+  // Messages
+  async getMessages(recipientId: number): Promise<Message[]> {
+    return this.request<Message[]>(`/api/messages/${recipientId}/`)
+  }
+
+  async sendMessage(recipientId: number, content: string): Promise<Message> {
+    return this.request<Message>(`/api/messages/${recipientId}/`, {
+      method: "POST",
+      body: JSON.stringify({ content }),
+    })
+  }
+
+  async getConversations(): Promise<User[]> {
+    return this.request<User[]>("/api/messages/")
+  }
+
+async removeFromWishlist(artworkId: number): Promise<void> {
+  await this.delete(`/api/wishlist/${artworkId}/`)
 }
 
+async addToWishlist(artworkId: number): Promise<void> {
+  await this.post(`/api/wishlist/`, { artwork_id: artworkId })
+}
+
+}
 
 export const apiClient = new ApiClient()
 
@@ -416,3 +503,19 @@ export async function fetchWishlist() {
 }
 
 
+// api.ts
+
+export const uploadArtistDetails = async (formData: FormData) => {
+  try {
+    const res = await fetch("/api/artist-membership", {
+      method: "POST",
+      body: formData,
+    })
+    if (!res.ok) {
+      throw new Error("Failed to submit artist details")
+    }
+    return await res.json()
+  } catch (error: any) {
+    throw { message: error.message || "Something went wrong" }
+  }
+}

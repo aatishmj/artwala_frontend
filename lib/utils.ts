@@ -26,3 +26,41 @@ export function getImageUrl(imagePath: string | null | undefined): string {
   const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"
   return `${API_BASE_URL}/media/profiles/${imagePath}`
 }
+
+// utils.ts
+
+export const validateArtistDetails = ({
+  address,
+  aadhaarFile,
+  panFile,
+  bankName,
+  accountNumber,
+  ifsc,
+  branch,
+  accountHolder,
+  age,
+  birthDate,
+  gender,
+  phone,
+}: {
+  address: string
+  aadhaarFile: File | null
+  panFile: File | null
+  bankName: string
+  accountNumber: string
+  ifsc: string
+  branch: string
+  accountHolder: string
+  age: string
+  birthDate: string
+  gender: string
+  phone: string
+}) => {
+  if (!address || !aadhaarFile || !panFile || !bankName || !accountNumber || !ifsc || !branch || !accountHolder || !age || !birthDate || !gender || !phone) {
+    return "All fields are required"
+  }
+  if (!/^\d{10}$/.test(phone.replace(/\D/g, ""))) {
+    return "Phone number must be 10 digits"
+  }
+  return null
+}

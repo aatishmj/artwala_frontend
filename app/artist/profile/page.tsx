@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -9,18 +10,70 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
-import { Edit, MapPin, Calendar, Instagram, Twitter, Globe, Save, Eye, Heart, Palette, Users, DollarSign } from "lucide-react"
+import { Skeleton } from "@/components/ui/skeleton"
+import { Edit, MapPin, Calendar, Instagram, Twitter, Globe, Save, Eye, Heart, Palette, Users, DollarSign, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/user-menu"
 import { EditProfileModal } from "@/components/edit-profile-modal"
-import { useUserProfile, useUserStats, useAuth } from "@/hooks"
+import { useUserProfile, useUserStats, useAuth, useArtworks } from "@/hooks"
+import { useToast } from "@/hooks/use-toast"
 import { getImageUrl } from "@/lib/utils"
+import { ProfileUpdateData } from "@/hooks/useUserProfile"
 
 export default function ArtistProfile() {
   const { user } = useAuth()
-  const { profile, loading: profileLoading, error: profileError, updateProfile } = useUserProfile()
-  const { stats, loading: statsLoading } = useUserStats()
+  const { profile, loading: profileLoading, error: profileError, updateProfile, refetch: refetchProfile } = useUserProfile()
+  const { stats, loading: statsLoading, refetch: refetchStats } = useUserStats()
+  const { artworks, loading: artworksLoading, error: artworksError } = useArtworks({ artistId: profile?.id, requireArtist: true })
+  const { toast } = useToast()
+  const [formData, setFormData] = useState<ProfileUpdateData>({})
+  const [isUpdating, setIsUpdating] = useState(false)
+
+  // Update form data when profile loads
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        first_name: profile.first_name || "",
+        last_name: profile.last_name || "",
+        phone: profile.phone || "",
+        bio: profile.bio || "",
+        location: profile.location || "",
+        website: profile.website || "",
+        instagram_handle: profile.instagram_handle || "",
+        twitter_handle: profile.twitter_handle || "",
+      })
+    }
+  }, [profile])
+
+  const handleInputChange = (field: keyof ProfileUpdateData, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (isUpdating) return
+    setIsUpdating(true)
+    try {
+      await updateProfile(formData)
+      toast({
+        title: "Success",
+        description: "Profile updated successfully.",
+      })
+      // Refetch to update UI
+      refetchProfile()
+      refetchStats()
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to update profile.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
 
   if (profileLoading || statsLoading) {
     return (
@@ -51,62 +104,7 @@ export default function ArtistProfile() {
     totalRevenue: stats?.stats.total_revenue || 0,
   }
 
-  const artworks = [
-    {
-      id: 1,
-      title: "Sunset Dreams",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "₹15,000",
-      likes: 234,
-      views: 1200,
-      status: "Available",
-    },
-    {
-      id: 2,
-      title: "Urban Rhythm",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "₹8,500",
-      likes: 156,
-      views: 890,
-      status: "Sold",
-    },
-    {
-      id: 3,
-      title: "Digital Mandala",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "₹12,000",
-      likes: 89,
-      views: 567,
-      status: "Available",
-    },
-    {
-      id: 4,
-      title: "Morning Glory",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "₹18,000",
-      likes: 312,
-      views: 1456,
-      status: "Available",
-    },
-    {
-      id: 5,
-      title: "Abstract Thoughts",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "₹9,500",
-      likes: 198,
-      views: 743,
-      status: "Available",
-    },
-    {
-      id: 6,
-      title: "Nature's Call",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "₹22,000",
-      likes: 445,
-      views: 2134,
-      status: "Available",
-    },
-  ]
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pastel-mint to-pastel-blue dark:bg-gray-900">
@@ -259,13 +257,6 @@ export default function ArtistProfile() {
                     </div>
                     <div className="text-sm text-muted-foreground">Revenue</div>
                   </div>
-                  <div className="text-center">
-                    <div className="font-bold text-xl flex items-center gap-1">
-                      <Palette className="w-4 h-4" />
-                      {artistStats.artworks}
-                    </div>
-                    <div className="text-sm text-muted-foreground">Artworks</div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -281,46 +272,71 @@ export default function ArtistProfile() {
           </TabsList>
 
           <TabsContent value="artworks">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {artworks.map((artwork) => (
-                <Card key={artwork.id} className="group hover:shadow-lg transition-shadow overflow-hidden">
-                  <div className="relative">
-                    <img
-                      src={artwork.image || "/placeholder.svg"}
-                      alt={artwork.title}
-                      className="w-full h-48 object-cover"
-                    />
-                    <div className="absolute top-2 right-2">
-                      <Badge variant={artwork.status === "Available" ? "default" : "secondary"}>{artwork.status}</Badge>
-                    </div>
-                    <div className="absolute bottom-2 left-2 flex gap-2">
-                      <div className="bg-black/50 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-                        <Eye className="w-3 h-3" />
-                        {artwork.views}
+            {artworksLoading ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <Card key={i} className="overflow-hidden">
+                    <Skeleton className="w-full h-48" />
+                    <CardContent className="p-4">
+                      <Skeleton className="h-4 w-3/4 mb-2" />
+                      <Skeleton className="h-4 w-1/2" />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : artworksError ? (
+              <div className="text-center py-8">
+                <p className="text-red-600 dark:text-red-400">Failed to load artworks</p>
+                <Button onClick={() => window.location.reload()}>Try Again</Button>
+              </div>
+            ) : artworks.length === 0 ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">No artworks yet</p>
+              </div>
+            ) : (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {artworks.map((artwork) => (
+                  <Card key={artwork.id} className="group hover:shadow-lg transition-shadow overflow-hidden">
+                    <div className="relative">
+                      <img
+                        src={getImageUrl(artwork.image) || "/placeholder.svg"}
+                        alt={artwork.title}
+                        className="w-full h-48 object-cover"
+                      />
+                      <div className="absolute top-2 right-2">
+                        <Badge variant={artwork.is_available ? "default" : "secondary"}>
+                          {artwork.is_available ? "Available" : "Sold"}
+                        </Badge>
                       </div>
-                      <div className="bg-black/50 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-                        <Heart className="w-3 h-3" />
-                        {artwork.likes}
+                      <div className="absolute bottom-2 left-2 flex gap-2">
+                        <div className="bg-black/50 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                          <Eye className="w-3 h-3" />
+                          0
+                        </div>
+                        <div className="bg-black/50 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                          <Heart className="w-3 h-3" />
+                          0
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold mb-2">{artwork.title}</h3>
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-green-600">{artwork.price}</span>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Eye className="w-4 h-4" />
-                        </Button>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold mb-2">{artwork.title}</h3>
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-green-600">₹{artwork.price}</span>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm">
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button variant="outline" size="sm">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </TabsContent>
 
           <TabsContent value="edit">
@@ -328,57 +344,125 @@ export default function ArtistProfile() {
               <CardHeader>
                 <CardTitle>Edit Profile</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" defaultValue="Priya Sharma" />
+              <form onSubmit={handleSubmit}>
+                <CardContent className="space-y-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="first_name">First Name</Label>
+                      <Input
+                        id="first_name"
+                        value={formData.first_name || ""}
+                        onChange={(e) => handleInputChange("first_name", e.target.value)}
+                        placeholder="Enter your first name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="last_name">Last Name</Label>
+                      <Input
+                        id="last_name"
+                        value={formData.last_name || ""}
+                        onChange={(e) => handleInputChange("last_name", e.target.value)}
+                        placeholder="Enter your last name"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input id="username" defaultValue="priya_art" />
-                  </div>
-                </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="bio">Bio</Label>
-                  <Textarea
-                    id="bio"
-                    defaultValue="Contemporary artist specializing in oil paintings and digital art. Inspired by nature, urban landscapes, and human emotions. Featured in multiple exhibitions across India."
-                    rows={4}
-                  />
-                </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      value={formData.phone || ""}
+                      onChange={(e) => handleInputChange("phone", e.target.value)}
+                      placeholder="Enter your phone number"
+                    />
+                  </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <Input id="location" defaultValue="Mumbai, India" />
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea
+                      id="bio"
+                      value={formData.bio || ""}
+                      onChange={(e) => handleInputChange("bio", e.target.value)}
+                      placeholder="Tell us about yourself..."
+                      rows={4}
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="website">Website</Label>
-                    <Input id="website" defaultValue="https://priyasharma.art" />
-                  </div>
-                </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="instagram">Instagram</Label>
-                    <Input id="instagram" defaultValue="@priya_art_official" />
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location</Label>
+                      <Input
+                        id="location"
+                        value={formData.location || ""}
+                        onChange={(e) => handleInputChange("location", e.target.value)}
+                        placeholder="City, Country"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="website">Website</Label>
+                      <Input
+                        id="website"
+                        value={formData.website || ""}
+                        onChange={(e) => handleInputChange("website", e.target.value)}
+                        placeholder="https://yourwebsite.com"
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="twitter">Twitter</Label>
-                    <Input id="twitter" defaultValue="@priya_artist" />
-                  </div>
-                </div>
 
-                <div className="flex gap-4">
-                  <Button className="bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg hover:shadow-xl transition-all">
-                    <Save className="w-4 h-4 mr-2" />
-                    Save Changes
-                  </Button>
-                  <Button variant="outline">Cancel</Button>
-                </div>
-              </CardContent>
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="instagram_handle">Instagram Handle</Label>
+                      <Input
+                        id="instagram_handle"
+                        value={formData.instagram_handle || ""}
+                        onChange={(e) => handleInputChange("instagram_handle", e.target.value)}
+                        placeholder="instagram_username"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="twitter_handle">Twitter Handle</Label>
+                      <Input
+                        id="twitter_handle"
+                        value={formData.twitter_handle || ""}
+                        onChange={(e) => handleInputChange("twitter_handle", e.target.value)}
+                        placeholder="twitter_username"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-4">
+                    <Button
+                      type="submit"
+                      disabled={isUpdating}
+                      className="bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg hover:shadow-xl transition-all"
+                    >
+                      {isUpdating ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4 mr-2" />
+                          Save Changes
+                        </>
+                      )}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => setFormData({
+                      first_name: profile?.first_name || "",
+                      last_name: profile?.last_name || "",
+                      phone: profile?.phone || "",
+                      bio: profile?.bio || "",
+                      location: profile?.location || "",
+                      website: profile?.website || "",
+                      instagram_handle: profile?.instagram_handle || "",
+                      twitter_handle: profile?.twitter_handle || "",
+                    })}>
+                      Cancel
+                    </Button>
+                  </div>
+                </CardContent>
+              </form>
             </Card>
           </TabsContent>
 

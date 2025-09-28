@@ -13,6 +13,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/user-menu"
 import { toast } from "sonner"
+import { apiClient } from "@/lib/api"
 
 export default function PaymentPage() {
   const [paymentMethod, setPaymentMethod] = useState("card")
@@ -65,12 +66,35 @@ export default function PaymentPage() {
   const handlePayment = async () => {
     setLoading(true)
 
-    // Simulate payment processing
-    setTimeout(() => {
-      setLoading(false)
-      toast.success("Payment successful!")
+    try {
+      // Simulate payment processing delay
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      const artworkId = searchParams.get("artwork")
+      const artworks = searchParams.get("artworks")
+
+      if (artworks) {
+        // Handle multiple artworks - create separate orders
+        const ids = artworks.split(",").map(id => parseInt(id.trim()))
+        for (const id of ids) {
+          await apiClient.createOrder({ artwork_id: id, quantity: 1 })
+        }
+        toast.success("Payment successful for multiple items!")
+      } else if (artworkId) {
+        // Single artwork
+        const order = await apiClient.createOrder({ artwork_id: parseInt(artworkId), quantity: 1 })
+        toast.success(`Payment successful! Order #${order.id} placed.`)
+      } else {
+        throw new Error("No artwork specified")
+      }
+
       router.push("/user/orders")
-    }, 2000)
+    } catch (error: any) {
+      console.error("Payment failed:", error)
+      toast.error(error.message || "Payment failed")
+    } finally {
+      setLoading(false)
+    }
   }
 
   if (!orderSummary) {

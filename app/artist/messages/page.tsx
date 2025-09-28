@@ -1,97 +1,95 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Search, Send, Paperclip, ImageIcon, FileText, Smile, Phone, Video, Info, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { apiClient, tokenManager } from "@/lib/api"
+import { User, Message } from "@/lib/api"
 
 export default function ArtistMessagesPage() {
-  const [selectedChat, setSelectedChat] = useState<number | null>(1)
+  const [selectedChat, setSelectedChat] = useState<number | null>(null)
   const [message, setMessage] = useState("")
+  const [conversations, setConversations] = useState<User[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
+  const [loading, setLoading] = useState(true)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const conversations = [
-    {
-      id: 1,
-      name: "Rahul Kumar",
-      username: "@rahul_collector",
-      avatar: "/placeholder.svg?height=40&width=40",
-      lastMessage: "I'm interested in commissioning a portrait",
-      timestamp: "2m ago",
-      unread: 2,
-      online: true,
-      userType: "user",
-    },
-    {
-      id: 2,
-      name: "Priya Singh",
-      username: "@priya_art_lover",
-      avatar: "/placeholder.svg?height=40&width=40",
-      lastMessage: "When will the painting be ready?",
-      timestamp: "1h ago",
-      unread: 0,
-      online: false,
-      userType: "user",
-    },
-    {
-      id: 3,
-      name: "Maya Patel",
-      username: "@maya_collector",
-      avatar: "/placeholder.svg?height=40&width=40",
-      lastMessage: "Thank you for the beautiful artwork!",
-      timestamp: "3h ago",
-      unread: 1,
-      online: true,
-      userType: "user",
-    },
-  ]
+  const [isMounted, setIsMounted] = useState(false)
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
 
-  const messages = [
-    {
-      id: 1,
-      senderId: 1,
-      content: "Hi! I saw your portrait work and I'm interested in commissioning one",
-      timestamp: "10:30 AM",
-      type: "text",
-    },
-    {
-      id: 2,
-      senderId: 2,
-      content: "Hello! Thank you for your interest. I'd be happy to discuss the details with you.",
-      timestamp: "10:32 AM",
-      type: "text",
-    },
-    {
-      id: 3,
-      senderId: 1,
-      content: "Great! What information do you need from me?",
-      timestamp: "10:35 AM",
-      type: "text",
-    },
-    {
-      id: 4,
-      senderId: 2,
-      content: "I'll need some reference photos and details about the size and style you prefer.",
-      timestamp: "10:37 AM",
-      type: "text",
-    },
-    {
-      id: 5,
-      senderId: 2,
-      content: "I'm interested in commissioning a portrait",
-      timestamp: "10:40 AM",
-      type: "text",
-    },
-  ]
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isMounted) return
+
+    const user = tokenManager.getUser()
+    const token = tokenManager.getAccessToken()
+    setCurrentUser(user)
+    if (!user || !token) {
+      window.location.href = "/auth/login"
+      return
+    }
+  }, [isMounted])
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    if (!isMounted || !currentUser) return
+
+    const fetchConversations = async () => {
+      try {
+        setLoading(true)
+        const convs = await apiClient.getConversations()
+        setConversations(convs)
+      } catch (error) {
+        console.error("Failed to fetch conversations:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchConversations()
+  }, [isMounted, currentUser])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  useEffect(() => {
+    if (selectedChat) {
+      const fetchMessages = async () => {
+        try {
+          const msgs = await apiClient.getMessages(selectedChat)
+          setMessages(msgs)
+        } catch (error) {
+          console.error("Failed to fetch messages:", error)
+        }
+      }
+      fetchMessages()
+    } else {
+      setMessages([])
+    }
+  }, [selectedChat])
 
   const selectedConversation = conversations.find((conv) => conv.id === selectedChat)
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      // Add message logic here
-      setMessage("")
+  const handleSendMessage = async () => {
+    if (message.trim() && selectedChat) {
+      try {
+        const sentMessage = await apiClient.sendMessage(selectedChat, message)
+        setMessages(prev => [...prev, sentMessage])
+        setMessage("")
+      } catch (error) {
+        console.error("Failed to send message:", error)
+      }
     }
   }
 
@@ -121,41 +119,32 @@ export default function ArtistMessagesPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {conversations.map((conversation) => (
-              <div
-                key={conversation.id}
-                className={`p-4 border-b cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                  selectedChat === conversation.id ? "bg-blue-50 dark:bg-blue-900/20" : ""
-                }`}
-                onClick={() => setSelectedChat(conversation.id)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="relative">
+            {loading ? (
+              <div className="p-4 text-center text-gray-500">Loading conversations...</div>
+            ) : conversations.length === 0 ? (
+              <div className="p-4 text-center text-gray-500">No conversations yet</div>
+            ) : (
+              conversations.map((conversation) => (
+                <div
+                  key={conversation.id}
+                  className={`p-4 border-b cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                    selectedChat === conversation.id ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                  }`}
+                  onClick={() => setSelectedChat(conversation.id)}
+                >
+                  <div className="flex items-center gap-3">
                     <Avatar>
-                      <AvatarImage src={conversation.avatar || "/placeholder.svg"} />
-                      <AvatarFallback>{conversation.name[0]}</AvatarFallback>
+                      <AvatarImage src={conversation.profile_image || "/placeholder.svg"} />
+                      <AvatarFallback>{conversation.first_name?.[0] || 'U'}</AvatarFallback>
                     </Avatar>
-                    {conversation.online && (
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-medium truncate">{conversation.name}</h3>
-                      <span className="text-xs text-gray-500">{conversation.timestamp}</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <p className="text-sm text-gray-500 truncate">{conversation.lastMessage}</p>
-                      {conversation.unread > 0 && (
-                        <span className="bg-blue-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                          {conversation.unread}
-                        </span>
-                      )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-medium truncate">{conversation.first_name} {conversation.last_name}</h3>
+                      <p className="text-sm text-gray-500">@{conversation.username}</p>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -166,12 +155,12 @@ export default function ArtistMessagesPage() {
             <div className="bg-white dark:bg-gray-800 border-b p-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Avatar>
-                  <AvatarImage src={selectedConversation.avatar || "/placeholder.svg"} />
-                  <AvatarFallback>{selectedConversation.name[0]}</AvatarFallback>
+                  <AvatarImage src={selectedConversation.profile_image || "/placeholder.svg"} />
+                  <AvatarFallback>{selectedConversation.first_name?.[0] || 'U'}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-medium">{selectedConversation.name}</h3>
-                  <p className="text-sm text-gray-500">{selectedConversation.online ? "Online" : "Last seen 2h ago"}</p>
+                  <h3 className="font-medium">{selectedConversation.first_name} {selectedConversation.last_name}</h3>
+                  <p className="text-sm text-gray-500">@{selectedConversation.username}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -189,49 +178,78 @@ export default function ArtistMessagesPage() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((msg) => (
-                <div key={msg.id} className={`flex ${msg.senderId === 2 ? "justify-end" : "justify-start"}`}>
-                  <div
-                    className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                      msg.senderId === 2
-                        ? "bg-blue-500 text-white"
-                        : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                    }`}
-                  >
-                    <p>{msg.content}</p>
-                    <p className={`text-xs mt-1 ${msg.senderId === 2 ? "text-blue-100" : "text-gray-500"}`}>
-                      {msg.timestamp}
-                    </p>
+              {messages.map((msg) => {
+                const isCurrentUser = msg.sender.id === currentUser?.id
+                
+                return (
+                  <div key={msg.id} className={`flex ${isCurrentUser ? "justify-end" : "justify-start"}`}>
+                    <div className={`flex gap-3 max-w-xs lg:max-w-md ${isCurrentUser ? "flex-row-reverse" : "flex-row"}`}>
+                      {/* Avatar - only show for receiver messages */}
+                      {!isCurrentUser && (
+                        <Avatar className="h-8 w-8 flex-shrink-0">
+                          <AvatarImage src={msg.sender.profile_image || "/placeholder.svg"} />
+                          <AvatarFallback>{msg.sender.first_name?.[0] || 'U'}</AvatarFallback>
+                        </Avatar>
+                      )}
+
+                      <div className="flex flex-col gap-1">
+                        {/* Message bubble */}
+                        <div
+                          className={`px-4 py-2 rounded-2xl ${
+                            isCurrentUser
+                              ? "bg-blue-500 text-white rounded-br-none"
+                              : "bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-bl-none"
+                          }`}
+                        >
+                          <p className="text-sm leading-relaxed">{msg.content}</p>
+                        </div>
+
+                        {/* Timestamp */}
+                        <p className={`text-xs ${isCurrentUser ? "text-right text-gray-500" : "text-gray-500"}`}>
+                          {new Date(msg.timestamp).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
+              <div ref={messagesEndRef} />
             </div>
 
             {/* Message Input */}
             <div className="bg-white dark:bg-gray-800 border-t p-4">
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm">
-                  <Paperclip className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <ImageIcon className="w-4 h-4" />
-                </Button>
-                <Button variant="ghost" size="sm">
-                  <FileText className="w-4 h-4" />
-                </Button>
+              <div className="flex items-end gap-3">
                 <div className="flex-1 relative">
-                  <Input
-                    placeholder="Type a message..."
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
-                    className="pr-10"
-                  />
-                  <Button variant="ghost" size="sm" className="absolute right-1 top-1/2 transform -translate-y-1/2">
-                    <Smile className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center bg-gray-100 dark:bg-gray-700 rounded-full px-4 py-2">
+                    <Button variant="ghost" size="sm" className="p-1 mr-2">
+                      <Smile className="w-5 h-5 text-gray-500" />
+                    </Button>
+                    <Input
+                      placeholder="Type a message..."
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && handleSendMessage()}
+                      className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-sm"
+                    />
+                    <div className="flex items-center gap-1 ml-2">
+                      <Button variant="ghost" size="sm" className="p-1">
+                        <Paperclip className="w-4 h-4 text-gray-500" />
+                      </Button>
+                      <Button variant="ghost" size="sm" className="p-1">
+                        <ImageIcon className="w-4 h-4 text-gray-500" />
+                      </Button>
+                    </div>
+                  </div>
                 </div>
-                <Button onClick={handleSendMessage} size="sm" className="bg-blue-500 hover:bg-blue-600">
+                <Button
+                  onClick={handleSendMessage}
+                  size="sm"
+                  disabled={!message.trim()}
+                  className="bg-blue-500 hover:bg-blue-600 rounded-full p-3 disabled:opacity-50"
+                >
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
