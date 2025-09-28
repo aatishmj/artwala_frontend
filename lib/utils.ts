@@ -7,24 +7,39 @@ export function cn(...inputs: ClassValue[]) {
 
 // Helper function to get the correct image URL
 export function getImageUrl(imagePath: string | null | undefined): string {
-  if (!imagePath) {
+  // Unified placeholder fallback
+  if (!imagePath || typeof imagePath !== 'string' || !imagePath.trim()) {
     return "/placeholder.svg?height=128&width=128"
   }
-  
-  // If it's already a full URL, return as is
-  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
-    return imagePath
+
+  const cleaned = imagePath.trim()
+
+  // Already absolute URL
+  if (/^https?:\/\//i.test(cleaned)) {
+    return cleaned
   }
-  
-  // If it starts with /media/, prepend the backend URL
-  if (imagePath.startsWith('/media/')) {
-    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://artwala.org"
-    return `${API_BASE_URL}${imagePath}`
+
+  // Base (may be empty if we rely on same-origin reverse proxy)
+  const RAW_BASE = process.env.NEXT_PUBLIC_API_URL
+  const BASE = RAW_BASE ? RAW_BASE.replace(/\/+$/,'') : ''
+
+  // If path already starts with /media/ just prepend base
+  if (cleaned.startsWith('/media/')) {
+    return `${BASE}${cleaned}`
   }
-  
-  // If it's just a filename, assume it's in the media/profiles/ directory
-  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://artwala.org"
-  return `${API_BASE_URL}/media/profiles/${imagePath}`
+
+  // If it begins with a slash but not /media/, assume already rooted asset (e.g. /profiles/foo.jpg)
+  if (cleaned.startsWith('/')) {
+    return `${BASE}${cleaned}`
+  }
+
+  // If it contains a directory (profiles/... or artworks/images/...), treat it as relative to media root
+  if (cleaned.includes('/')) {
+    return `${BASE}/media/${cleaned}`
+  }
+
+  // Bare filename (likely profile image stored as just name) -> profiles folder
+  return `${BASE}/media/profiles/${cleaned}`
 }
 
 // utils.ts
