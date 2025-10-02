@@ -87,6 +87,26 @@ export interface WishlistItem {
   }
 }
 
+export interface CreateOrderData {
+  // Add properties as needed
+  artwork_id: number
+  quantity: number
+}
+
+export interface Order {
+  id: number
+  status: string
+  // Add other properties as needed
+}
+
+export interface Message {
+  id: number
+  content: string
+  sender: number
+  recipient: number
+  timestamp: string
+}
+
 
 // Token management
 export const tokenManager = {
@@ -187,15 +207,25 @@ class ApiClient {
       if (!response.ok) {
         // Try to parse error body if present
         let errorData: any = {}
+        let errorMessage = `HTTP error! status: ${response.status}`
         try {
             // Only attempt to parse if content length isn't zero
             if (response.status !== 204) {
-              errorData = await response.json()
+
+              // Handle common DRF error formats
+              if (errorData.detail) {
+                errorMessage = errorData.detail
+              } else if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
+                errorMessage = errorData.non_field_errors[0]
+              } else if (errorData.message) {
+                errorMessage = errorData.message
+              } else if (typeof errorData === 'string') {
+                errorMessage = errorData
+              }
             }
         } catch (_) { /* ignore parse errors */ }
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
+        throw new Error(errorMessage)
       }
-
       // DELETE / 204 No Content or empty body handling
       if (response.status === 204) {
         return {} as T
@@ -408,10 +438,7 @@ class ApiClient {
   }
 
 
-  async getWishlist(): Promise<WishlistItem[]> {
-  const { data } = await this.get<WishlistItem[]>("/api/wishlist/")
-  return data
-  }
+
 
   // Profile completion details
   async getProfileCompletion(): Promise<any> {
@@ -466,15 +493,6 @@ class ApiClient {
   async getConversations(): Promise<User[]> {
     return this.request<User[]>("/api/messages/")
   }
-
-async removeFromWishlist(artworkId: number): Promise<void> {
-  await this.delete(`/api/wishlist/${artworkId}/`)
-}
-
-async addToWishlist(artworkId: number): Promise<void> {
-  await this.post(`/api/wishlist/`, { artwork_id: artworkId })
-}
-
 }
 
 export const apiClient = new ApiClient()
@@ -486,7 +504,7 @@ export async function fetchWishlist() {
 
   if (!token) throw new Error("No access token found")
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000"}/api/wishlist/`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/api/wishlist/`, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",

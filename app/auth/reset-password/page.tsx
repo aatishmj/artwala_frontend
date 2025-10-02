@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,7 +13,7 @@ import { Palette, ArrowLeft, Loader2, Eye, EyeOff, CheckCircle, XCircle } from "
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 
-export default function ResetPasswordPage() {
+function ResetPasswordContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
@@ -40,7 +40,7 @@ export default function ResetPasswordPage() {
     // Validate token
     const validateToken = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/auth/validate-reset/?token=${token}`)
+        const response = await fetch(`http://72.60.200.27:8000/api/auth/validate-reset/?token=${token}`)
         const data = await response.json()
         if (response.ok && data.valid) {
           setTokenValid(true)
@@ -73,7 +73,7 @@ export default function ResetPasswordPage() {
     setError("")
 
     try {
-      const response = await fetch("http://localhost:8000/api/auth/reset-password/", {
+      const response = await fetch("http://72.60.200.27:8000/api/auth/reset-password/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -301,5 +301,20 @@ export default function ResetPasswordPage() {
         </Card>
       </div>
     </div>
+  )
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-orange-100 dark:from-gray-900 dark:via-purple-900/20 dark:to-pink-900/20 flex items-center justify-center p-4">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-purple-600" />
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    }>
+      <ResetPasswordContent />
+    </Suspense>
   )
 }

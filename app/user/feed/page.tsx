@@ -1,6 +1,6 @@
 "use client"
 import { UserSidebar } from "@/components/side-menu"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -13,6 +13,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/user-menu"
 import { apiClient } from "@/lib/api"
 import { toast } from "sonner"
+import { useWishlist } from "@/hooks/useWishlist"
 
 interface Artist {
   id: number
@@ -44,6 +45,7 @@ interface Artwork {
 }
 
 export default function UserFeed() {
+  const { wishlist, loading: wishlistLoading, refetch: refetchWishlist, removeFromWishlist } = useWishlist()
   const [wishlistPosts, setWishlistPosts] = useState<Set<number>>(new Set())
   const [artworks, setArtworks] = useState<Artwork[]>([])
   const [loading, setLoading] = useState(true)
@@ -71,7 +73,7 @@ export default function UserFeed() {
     try {
       const newWishlist = new Set(wishlistPosts)
       if (newWishlist.has(artworkId)) {
-        await apiClient.removeFromWishlist(artworkId)
+        await removeFromWishlist(artworkId)
         newWishlist.delete(artworkId)
         toast.success("Removed from wishlist")
       } else {
@@ -296,7 +298,7 @@ export default function UserFeed() {
       {/* Header */}
       <header className="bg-white/95 dark:bg-slate-800/95 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-50 backdrop-blur-md">
         <div className="container mx-auto px-4 py-3">
-          <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
               <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg rounded-lg flex items-center justify-center">
                 <Palette className="w-5 h-5 text-white" />
@@ -393,7 +395,12 @@ export default function UserFeed() {
                           <div className="text-xs text-slate-500 dark:text-slate-400">{artist.username}</div>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" className="bg-transparent text-xs">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="bg-transparent text-xs"
+                        onClick={() => alert(`Follow button clicked for artist ${artist.username}`)}
+                      >
                         Follow
                       </Button>
                     </div>
@@ -422,7 +429,7 @@ export default function UserFeed() {
               </Card>
             </div>
           </div>
-          
+
           {/* Artworks Grid */}
           <div className="lg:col-span-3">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -463,7 +470,7 @@ export default function UserFeed() {
                       <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2 mb-3">
                         {artwork.description}
                       </p>
-                      
+
                       {/* Artist Info */}
                       <div
                         className="flex items-center gap-2 cursor-pointer mb-3"
@@ -498,7 +505,7 @@ export default function UserFeed() {
                           ₹{artwork.price}
                         </span>
                       </div>
-                      
+
                       <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
@@ -507,9 +514,9 @@ export default function UserFeed() {
                           className="flex items-center gap-1"
                         >
                           <Eye className="w-4 h-4" />
-                          <span className="hidden sm:inline">View</span>
+                          <span>View</span>
                         </Button>
-                        
+
                         <Button
                           size="sm"
                           onClick={() => handleBuyNow(artwork.id, artwork.price)}

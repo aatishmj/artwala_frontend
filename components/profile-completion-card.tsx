@@ -5,13 +5,21 @@ import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
 import { CheckCircle, AlertCircle } from "lucide-react"
 import { useProfileCompletion } from "@/hooks"
+import { useTheme } from "next-themes"
+import { useEffect, useState } from "react"
 
 export function ProfileCompletionCard() {
   const { completionData, loading, error } = useProfileCompletion()
+  const { theme } = useTheme()
+  const [isDark, setIsDark] = useState(false)
+
+  useEffect(() => {
+    setIsDark(theme === "dark")
+  }, [theme])
 
   if (loading) {
     return (
-      <Card>
+      <Card className={isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
@@ -20,8 +28,8 @@ export function ProfileCompletionCard() {
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-2">
-            <div className="h-2 bg-gray-200 rounded"></div>
-            <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+            <div className={isDark ? "h-2 bg-gray-700 rounded" : "h-2 bg-gray-200 rounded"}></div>
+            <div className={isDark ? "h-4 bg-gray-700 rounded w-3/4" : "h-4 bg-gray-200 rounded w-3/4"}></div>
           </div>
         </CardContent>
       </Card>
@@ -30,7 +38,7 @@ export function ProfileCompletionCard() {
 
   if (error || !completionData) {
     return (
-      <Card>
+      <Card className={isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}>
         <CardHeader>
           <CardTitle className="text-red-600">Profile Completion</CardTitle>
         </CardHeader>
@@ -44,7 +52,7 @@ export function ProfileCompletionCard() {
   const { percentage, completed_fields, missing_fields, completed_count, total_fields } = completionData
 
   return (
-    <Card>
+    <Card className={isDark ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"}>
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           Profile Completion
@@ -106,8 +114,8 @@ export function ProfileCompletionCard() {
         )}
 
         {percentage === 100 && (
-          <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-            <p className="text-sm text-green-700 dark:text-green-300 font-medium">
+          <div className={isDark ? "p-3 bg-green-900/20 rounded-lg border border-green-800" : "p-3 bg-green-50 rounded-lg border border-green-200"}>
+            <p className={isDark ? "text-sm text-green-300 font-medium" : "text-sm text-green-700 font-medium"}>
               🎉 Your profile is complete!
             </p>
           </div>

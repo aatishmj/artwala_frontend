@@ -1,5 +1,6 @@
 "use client"
 
+import React from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -29,10 +30,10 @@ export default function UserProfile() {
 
   if (profileLoading || statsLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600 dark:text-slate-400">Loading profile...</p>
         </div>
       </div>
     )
@@ -40,7 +41,7 @@ export default function UserProfile() {
 
   if (profileError || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400 mb-4">Failed to load profile</p>
           <Button onClick={() => window.location.reload()}>Try Again</Button>
@@ -57,12 +58,8 @@ export default function UserProfile() {
     orders: stats?.stats.orders_count || 0,
   }
 
-
-
-
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pastel-rose to-pastel-sage dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
       {/* Header */}
       <header className="bg-white/95 dark:bg-slate-800/95 border-b border-slate-200 dark:border-slate-700 backdrop-blur-md">
         <div className="container mx-auto px-4 py-4">
@@ -140,17 +137,17 @@ export default function UserProfile() {
                     {profile.bio || "Art enthusiast and collector passionate about supporting emerging artists."}
                   </p>
 
-                  {stats?.profile_completion !== undefined && stats.profile_completion < 100 && (
-                    <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  {stats?.profile_completion !== undefined && stats.profile_completion.percentage < 100 && (
+                    <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
                           Complete your profile
                         </span>
-                        <span className="text-sm text-amber-600 dark:text-amber-400">
-                          {Math.round(stats.profile_completion)}%
+                        <span className="text-sm text-blue-600 dark:text-blue-400">
+                          {Math.round(stats.profile_completion.percentage)}%
                         </span>
                       </div>
-                      <Progress value={stats.profile_completion} className="h-2" />
+                      <Progress value={stats.profile_completion.percentage} className="h-2" />
                     </div>
                   )}
 
@@ -187,41 +184,61 @@ export default function UserProfile() {
           </Card>
 
           {/* Tabs Section */}
-          <Tabs defaultValue="saved" className="space-y-6">
+          <Tabs defaultValue="following" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="saved">Saved Artworks</TabsTrigger>
               <TabsTrigger value="purchases">Purchase History</TabsTrigger>
               <TabsTrigger value="following">Following</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="following">
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <Card
-                  key={i}
-                  className="hover:shadow-lg transition-shadow bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
-                >
+            <TabsContent value="saved">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                   <CardContent className="p-6 text-center">
-                    <Avatar className="w-20 h-20 mx-auto mb-4">
-                      <AvatarImage src={`/placeholder.svg?height=80&width=80`} />
-                      <AvatarFallback>A{i}</AvatarFallback>
-                    </Avatar>
-                    <h3 className="font-semibold mb-1">Artist Name {i}</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">@artist{i}</p>
-                    <div className="flex items-center justify-center gap-4 text-sm mb-4">
-                      <div className="text-center">
-                        <div className="font-medium">234</div>
-                        <div className="text-slate-600 dark:text-slate-400">Artworks</div>
+                    <p>No saved artworks yet.</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="purchases">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                  <CardContent className="p-6 text-center">
+                    <p>No purchases yet.</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="following">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <Card
+                    key={i}
+                    className="hover:shadow-lg transition-shadow bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                  >
+                    <CardContent className="p-6 text-center">
+                      <Avatar className="w-20 h-20 mx-auto mb-4">
+                        <AvatarImage src={`/placeholder.svg?height=80&width=80`} />
+                        <AvatarFallback>A{i}</AvatarFallback>
+                      </Avatar>
+                      <h3 className="font-semibold mb-1">Artist Name {i}</h3>
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">@artist{i}</p>
+                      <div className="flex items-center justify-center gap-4 text-sm mb-4">
+                        <div className="text-center">
+                          <div className="font-medium">234</div>
+                          <div className="text-slate-600 dark:text-slate-400">Artworks</div>
+                        </div>
+                        <Button variant="outline" size="sm" className="w-full">
+                          Following
+                        </Button>
                       </div>
-                      <Button variant="outline" size="sm" className="w-full">
-                        Following
-                      </Button>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-            )}
-          </TabsContent>
+            </TabsContent>
           </Tabs>
         </div>
       </div>
