@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,14 +19,14 @@ import { useAuth } from "@/hooks/useAuth"
 export default function SignupPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { register } = useAuth()
+  const { register, isAuthenticated, loading, user } = useAuth()
 
   const typeParam = searchParams.get("type")
   const [showPassword, setShowPassword] = useState(false)
   const [userType, setUserType] = useState<"user" | "artist">(
     typeParam === "artist" || typeParam === "user" ? typeParam : "user",
   )
-  const [loading, setLoading] = useState(false)
+  const [signupLoading, setSignupLoading] = useState(false)
   const [error, setError] = useState("")
   const [formData, setFormData] = useState({
     firstName: "",
@@ -38,6 +38,13 @@ export default function SignupPage() {
     phone: "",
     acceptTerms: false,
   })
+
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      const redirectPath = user.user_type === "artist" ? "/artist/dashboard" : "/user/feed"
+      router.push(redirectPath)
+    }
+  }, [loading, isAuthenticated, user, router])
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -62,7 +69,7 @@ export default function SignupPage() {
       return
     }
 
-    setLoading(true)
+    setSignupLoading(true)
     setError("")
 
     try {
@@ -83,7 +90,7 @@ export default function SignupPage() {
     } catch (err: any) {
       setError(err.message || "Registration failed. Please try again.")
     } finally {
-      setLoading(false)
+      setSignupLoading(false)
     }
   }
 
@@ -260,9 +267,9 @@ export default function SignupPage() {
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                  disabled={loading}
+                  disabled={signupLoading}
                 >
-                  {loading ? (
+                  {signupLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Creating Account...

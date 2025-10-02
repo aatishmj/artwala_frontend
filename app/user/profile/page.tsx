@@ -30,10 +30,10 @@ export default function UserProfile() {
 
   if (profileLoading || statsLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600 dark:text-slate-400">Loading profile...</p>
         </div>
       </div>
     )
@@ -41,7 +41,7 @@ export default function UserProfile() {
 
   if (profileError || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400 mb-4">Failed to load profile</p>
           <Button onClick={() => window.location.reload()}>Try Again</Button>
@@ -59,7 +59,7 @@ export default function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pastel-rose to-pastel-sage dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
       {/* Header */}
       <header className="bg-white/95 dark:bg-slate-800/95 border-b border-slate-200 dark:border-slate-700 backdrop-blur-md">
         <div className="container mx-auto px-4 py-4">
@@ -138,12 +138,12 @@ export default function UserProfile() {
                   </p>
 
                   {stats?.profile_completion !== undefined && stats.profile_completion.percentage < 100 && (
-                    <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                    <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
                           Complete your profile
                         </span>
-                        <span className="text-sm text-amber-600 dark:text-amber-400">
+                        <span className="text-sm text-blue-600 dark:text-blue-400">
                           {Math.round(stats.profile_completion.percentage)}%
                         </span>
                       </div>

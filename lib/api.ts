@@ -1,4 +1,4 @@
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://72.60.200.27:8000"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
 
 // Types
 export interface User {
@@ -85,6 +85,26 @@ export interface WishlistItem {
       profile_image?: string
     }
   }
+}
+
+export interface CreateOrderData {
+  // Add properties as needed
+  artwork_id: number
+  quantity: number
+}
+
+export interface Order {
+  id: number
+  status: string
+  // Add other properties as needed
+}
+
+export interface Message {
+  id: number
+  content: string
+  sender: number
+  recipient: number
+  timestamp: string
 }
 
 
@@ -418,10 +438,7 @@ class ApiClient {
   }
 
 
-  async getWishlist(): Promise<WishlistItem[]> {
-  const { data } = await this.get<WishlistItem[]>("/api/wishlist/")
-  return data
-  }
+
 
   // Profile completion details
   async getProfileCompletion(): Promise<any> {
@@ -476,15 +493,6 @@ class ApiClient {
   async getConversations(): Promise<User[]> {
     return this.request<User[]>("/api/messages/")
   }
-
-async removeFromWishlist(artworkId: number): Promise<void> {
-  await this.delete(`/api/wishlist/${artworkId}/`)
-}
-
-async addToWishlist(artworkId: number): Promise<void> {
-  await this.post(`/api/wishlist/`, { artwork_id: artworkId })
-}
-
 }
 
 export const apiClient = new ApiClient()
@@ -496,7 +504,7 @@ export async function fetchWishlist() {
 
   if (!token) throw new Error("No access token found")
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "https://72.60.200.27:8000"}/api/wishlist/`, {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/api/wishlist/`, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",

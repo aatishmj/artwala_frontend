@@ -6,13 +6,24 @@ import { Badge } from "@/components/ui/badge"
 import { Palette, Users, Heart, Star, ArrowRight, Brush, Sparkles, Menu, X } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
 
 export default function HomePage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { isAuthenticated, loading, user } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      const redirectPath = user.user_type === "artist" ? "/artist/dashboard" : "/user/feed"
+      router.push(redirectPath)
+    }
+  }, [loading, isAuthenticated, user, router])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pastel-peach via-white to-pastel-lavender dark:from-gray-900 dark:via-gray-800 dark:to-purple-900/20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
       {/* Header */}
       <header className="border-b bg-white/90 dark:bg-gray-900/90 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 py-4">
@@ -112,21 +123,21 @@ export default function HomePage() {
 
           {/* Mission Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12 lg:mb-16">
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-pastel-peach to-pastel-coral dark:from-purple-900/20 dark:to-pink-900/20">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700">
               <CardContent className="p-4 sm:p-6 text-center">
                 <Brush className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 mx-auto mb-3 sm:mb-4 text-purple-600" />
                 <h3 className="font-semibold mb-2 text-sm sm:text-base">Create</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">Mentor and guide artists across all disciplines</p>
               </CardContent>
             </Card>
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-pastel-mint to-pastel-pink dark:from-pink-900/20 dark:to-orange-900/20">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-700 dark:to-slate-600">
               <CardContent className="p-4 sm:p-6 text-center">
                 <Users className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 mx-auto mb-3 sm:mb-4 text-pink-600" />
                 <h3 className="font-semibold mb-2 text-sm sm:text-base">Reach</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">Connect artists with connoisseurs and collectors</p>
               </CardContent>
             </Card>
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-pastel-sky to-pastel-blue dark:from-orange-900/20 dark:to-yellow-900/20">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-pink-50 dark:from-slate-600 dark:to-slate-500">
               <CardContent className="p-4 sm:p-6 text-center">
                 <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 mx-auto mb-3 sm:mb-4 text-orange-600" />
                 <h3 className="font-semibold mb-2 text-sm sm:text-base">Celebrate</h3>

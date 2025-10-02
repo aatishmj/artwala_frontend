@@ -30,6 +30,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { UserMenu } from "@/components/user-menu"
 import { UploadArtworkModal } from "@/components/upload-artwork-modal"
 import { useAuth, useUserProfile, useUserStats, useArtistRecommendations, useArtworks } from "@/hooks"
+import { useFollowing } from "@/hooks/useFollowing"
 import { getImageUrl } from "@/lib/utils"
 
 export default function ArtistDashboard() {
@@ -38,20 +39,21 @@ export default function ArtistDashboard() {
   const { stats, loading: statsLoading, error: statsError } = useUserStats()
   const { recommendations, loading: recommendationsLoading } = useArtistRecommendations()
   const { artworks, loading: artworksLoading, prependArtwork } = useArtworks({ limit: 6 })
-  
+  const { following, loading: followingLoading, refetch: refetchFollowing } = useFollowing()
+
   // FIXED: Correct membership check
-  const hasPremiumMembership = profile?.is_member === true
+  const hasPremiumMembership = profile?.membership_statuse === true
 
   // Debug logging to check membership status
   console.log('Profile membership status:', {
-    is_member: profile?.is_member,
+    membership_statuse: profile?.membership_statuse,
     hasPremiumMembership,
     profile: profile
   })
 
   if (profileLoading || statsLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading dashboard...</p>
@@ -62,7 +64,7 @@ export default function ArtistDashboard() {
 
   if (profileError || statsError || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400 mb-4">Failed to load dashboard</p>
           <Button onClick={() => window.location.reload()}>Try Again</Button>
@@ -74,7 +76,7 @@ export default function ArtistDashboard() {
   // Add null check for stats
   if (!stats) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading statistics...</p>
@@ -115,9 +117,9 @@ export default function ArtistDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pastel-peach to-pastel-mint dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
       {/* Header */}
-      <header className="bg-white/95 dark:bg-gray-800/95 border-b backdrop-blur-md">
+      <header className="bg-white/95 dark:bg-slate-800/95 border-b border-slate-200 dark:border-slate-700 backdrop-blur-md">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Link href="/" className="flex items-center gap-2">
@@ -125,22 +127,24 @@ export default function ArtistDashboard() {
                 <Palette className="w-5 h-5 text-white" />
               </div>
               <span className="font-bold text-lg">ARTWALA</span>
-              <Badge variant="secondary" className="ml-2">
-                Artist
-              </Badge>
-              {hasPremiumMembership && (
-                <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 ml-2">
-                  <Star className="w-3 h-3 mr-1" />
-                  Premium Member
-                </Badge>
-              )}
+                  <Badge variant="secondary" className="ml-2">
+                    Artist
+                  </Badge>
+                  {hasPremiumMembership && (
+                    <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 ml-2">
+                      <Star className="w-3 h-3 mr-1" />
+                      Premium Member
+                    </Badge>
+                  )}
             </Link>
 
             <div className="flex items-center gap-4">
               <ThemeToggle />
-              <Button variant="outline" size="sm">
-                <Eye className="w-4 h-4 mr-2" />
-                View Profile
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/artist/profile">
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Profile
+                </Link>
               </Button>
               <UserMenu />
             </div>
@@ -251,18 +255,25 @@ export default function ArtistDashboard() {
                       <div className="flex items-center space-x-3">
                         <Avatar className="w-10 h-10">
                           <AvatarImage src={getImageUrl(artist.profile_image) || "/placeholder.svg"} />
-                          <AvatarFallback>{artist.full_name?.[0] || artist.username[0]}</AvatarFallback>
+                          <AvatarFallback>{(artist.first_name?.[0] || artist.username[0])}</AvatarFallback>
                         </Avatar>
                         <div>
-                          <p className="text-sm font-medium">{artist.full_name || artist.username}</p>
+                          <p className="text-sm font-medium">{artist.first_name || artist.username}</p>
                           <p className="text-xs text-muted-foreground">
-                            {artist.stats?.followers_count || 0} followers
+                            {artist.follower_count || 0} followers
                           </p>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm">
-                        Follow
-                      </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      // Implement follow/unfollow logic here
+                      alert(`Follow button clicked for artist ${artist.username}`);
+                    }}
+                  >
+                    Follow
+                  </Button>
                     </div>
                   )) || <p className="text-sm text-muted-foreground">No recommendations available</p>
                 )}
@@ -576,12 +587,16 @@ export default function ArtistDashboard() {
                               </div>
                             </div>
                             <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
-                                Edit
+                              <Button variant="outline" size="sm" asChild>
+                                <Link href={`/artist/artworks/${artwork.id}/edit`}>
+                                  Edit
+                                </Link>
                               </Button>
-                              <Button variant="outline" size="sm">
-                                View
-                                <ArrowUpRight className="w-4 h-4 ml-1" />
+                              <Button variant="outline" size="sm" asChild>
+                                <Link href={`/artwork/${artwork.id}`}>
+                                  View
+                                  <ArrowUpRight className="w-4 h-4 ml-1" />
+                                </Link>
                               </Button>
                             </div>
                           </div>

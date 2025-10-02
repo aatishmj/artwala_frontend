@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,19 +18,26 @@ import { useAuth } from "@/hooks/useAuth"
 export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { login } = useAuth()
+  const { login, isAuthenticated, loading, user } = useAuth()
 
   const typeParam = searchParams.get("type")
   const [showPassword, setShowPassword] = useState(false)
   const [userType, setUserType] = useState<"user" | "artist">(
     typeParam === "artist" || typeParam === "user" ? typeParam : "user",
   )
-  const [loading, setLoading] = useState(false)
+  const [loginLoading, setLoginLoading] = useState(false)
   const [error, setError] = useState("")
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   })
+
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      const redirectPath = user.user_type === "artist" ? "/artist/dashboard" : "/user/feed"
+      router.push(redirectPath)
+    }
+  }, [loading, isAuthenticated, user, router])
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -39,7 +46,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
+    setLoginLoading(true)
     setError("")
 
     try {
@@ -51,7 +58,7 @@ export default function LoginPage() {
     } catch (err: any) {
       setError(err.message || "Login failed. Please check your credentials.")
     } finally {
-      setLoading(false)
+      setLoginLoading(false)
     }
   }
 
@@ -148,9 +155,9 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                  disabled={loading}
+                  disabled={loginLoading}
                 >
-                  {loading ? (
+                  {loginLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Signing In...
