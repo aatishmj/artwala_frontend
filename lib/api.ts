@@ -13,13 +13,17 @@ export interface User {
   bio?: string
   location?: string
   website?: string
-  membership_statuse?:boolean 
+  membership_statuse?:boolean
   instagram_handle?: string
   twitter_handle?: string
   artist_since?: string
   social_links?: Record<string, string>
   is_verified: boolean
   date_joined: string
+  followers?: number
+  following?: number
+  artworks?: number
+  joinedDate?: string
 }
 
 export interface AuthResponse {
@@ -66,6 +70,31 @@ export interface RegisterData {
   last_name: string
   user_type: "user" | "artist"
   phone?: string
+}
+
+export interface Order {
+  id: number
+  user: number
+  artwork: number
+  quantity: number
+  total_price: string
+  status: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateOrderData {
+  artwork_id: number
+  quantity: number
+}
+
+export interface Message {
+  id: number
+  sender: number
+  recipient: number
+  content: string
+  timestamp: string
+  is_read: boolean
 }
 
 
@@ -140,7 +169,7 @@ class ApiClient {
     const url = `${API_BASE_URL}${endpoint}`
     const accessToken = tokenManager.getAccessToken()
     const isFormData = options.body instanceof FormData
-    const maxRetries = 3
+    const maxRetries = 10
 
     const config: RequestInit = {
       ...options,
@@ -176,26 +205,66 @@ class ApiClient {
         }
       }
 
-      // Handle rate limiting (429) with exponential backoff
+      // Handle rate limiting (429) with Retry-After header support and exponential backoff
       if (response.status === 429 && retryCount < maxRetries) {
-        const delay = Math.pow(2, retryCount) * 1000 // Exponential backoff: 1s, 2s, 4s
-        console.warn(`Rate limited (429). Retrying in ${delay}ms... (attempt ${retryCount + 1}/${maxRetries})`)
+        let delay = Math.pow(2, retryCount) * 1000 // Default exponential backoff: 1s, 2s, 4s, 8s, 16s
+        const retryAfter = response.headers.get('Retry-After')
+        if (retryAfter) {
+          const retrySeconds = parseInt(retryAfter, 10)
+          if (!isNaN(retrySeconds)) {
+            delay = retrySeconds * 1000
+          }
+        }
+        delay = Math.min(delay, 30000) // Cap at 30 seconds
+        console.warn(`Rate limited (429). Retrying in ${delay}ms... (attempt ${retryCount + 1}/${maxRetries}) ${retryAfter ? `(Retry-After: ${retryAfter}s)` : ''}`)
         await new Promise(resolve => setTimeout(resolve, delay))
         return this.request<T>(endpoint, options, retryCount + 1)
       }
 
+      console.log("Response status:", response.status, "for endpoint:", endpoint)
       if (!response.ok) {
         // Try to parse error body if present
         let errorData: any = {}
+        let errorMessage = `HTTP error! status: ${response.status}`
         try {
             // Only attempt to parse if content length isn't zero
             if (response.status !== 204) {
               errorData = await response.json()
+              console.log("Error response data:", errorData)
+              // Handle common DRF error formats
+              if (errorData.detail) {
+                errorMessage = errorData.detail
+              } else if (errorData.non_field_errors && errorData.non_field_errors.length > 0) {
+                errorMessage = errorData.non_field_errors[0]
+              } else if (errorData.message) {
+                errorMessage = errorData.message
+              } else if (typeof errorData === 'string') {
+                errorMessage = errorData
+              }
             }
-        } catch (_) { /* ignore parse errors */ }
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`)
-      }
+        } catch (e) {
+          console.log("Failed to parse error response as JSON, trying text:", e)
+          try {
+            const text = await response.text()
+            console.log("Error response text:", text)
+            if (text.includes("You cannot follow yourself")) {
+              errorMessage = "You cannot follow yourself."
+            } else if (text.includes("Invalid")) {
+              errorMessage = "Invalid request."
+            } else {
+              errorMessage = "Server error."
+            }
+          } catch (_) { /* ignore */ }
+        }
 
+        // Specific handling for rate limiting
+        if (response.status === 429) {
+          errorMessage = "Too many requests. Please wait a moment and try again."
+        }
+
+        console.log("Throwing error:", errorMessage)
+        throw new Error(errorMessage)
+      }
       // DELETE / 204 No Content or empty body handling
       if (response.status === 204) {
         return {} as T
@@ -408,10 +477,6 @@ class ApiClient {
   }
 
 
-  async getWishlist(): Promise<WishlistItem[]> {
-  const { data } = await this.get<WishlistItem[]>("/api/wishlist/")
-  return data
-  }
 
   // Profile completion details
   async getProfileCompletion(): Promise<any> {
@@ -467,26 +532,33 @@ class ApiClient {
     return this.request<User[]>("/api/messages/")
   }
 
-async removeFromWishlist(artworkId: number): Promise<void> {
-  await this.delete(`/api/wishlist/${artworkId}/`)
-}
+  // Follow/Unfollow
+  async followArtist(artistId: number): Promise<void> {
+    console.log("followArtist called with artistId:", artistId)
+    console.log("Request body:", JSON.stringify({ following: artistId }))
+    return this.request<void>("/api/follow/", {
+      method: "POST",
+      body: JSON.stringify({ following: artistId }),
+    })
+  }
 
-async addToWishlist(artworkId: number): Promise<void> {
-  await this.post(`/api/wishlist/`, { artwork_id: artworkId })
-}
+  async unfollowArtist(artistId: number): Promise<void> {
+    return this.request<void>(`/api/unfollow/${artistId}/`, {
+      method: "DELETE",
+    })
+  }
 
 }
 
 export const apiClient = new ApiClient()
 
 // utils/api.ts
-// utils/api.ts
 export async function fetchWishlist() {
   const token = typeof window !== "undefined" ? localStorage.getItem("access_token") : null
 
   if (!token) throw new Error("No access token found")
 
-  const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8000"}/api/wishlist/`, {
+  const res = await fetch(`${API_BASE_URL}/api/wishlist/`, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
@@ -500,22 +572,4 @@ export async function fetchWishlist() {
   }
 
   return res.json()
-}
-
-
-// api.ts
-
-export const uploadArtistDetails = async (formData: FormData) => {
-  try {
-    const res = await fetch("/api/artist-membership", {
-      method: "POST",
-      body: formData,
-    })
-    if (!res.ok) {
-      throw new Error("Failed to submit artist details")
-    }
-    return await res.json()
-  } catch (error: any) {
-    throw { message: error.message || "Something went wrong" }
-  }
 }

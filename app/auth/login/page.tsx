@@ -162,7 +162,7 @@ export default function LoginPage() {
 
                 <div className="text-center text-sm">
                   <span className="text-muted-foreground">Don't have an account? </span>
-                  <Link href="/auth/signup" className="text-purple-600 hover:underline font-medium">
+                  <Link href={`/auth/signup?type=${userType}`} className="text-purple-600 hover:underline font-medium">
                     Sign up
                   </Link>
                 </div>

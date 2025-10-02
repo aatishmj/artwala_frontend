@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -28,14 +28,21 @@ import { CommentSection } from "@/components/comment-section"
 import { ShareModal } from "@/components/share-modal"
 import { apiClient } from "@/lib/api"
 import { toast } from "sonner"
+import { useFollowing } from "@/hooks/useFollowing"
 
 export default function ArtistProfilePage() {
   const [likedPosts, setLikedPosts] = useState<Set<number>>(new Set())
   const [wishlistPosts, setWishlistPosts] = useState<Set<number>>(new Set())
-  const [isFollowing, setIsFollowing] = useState(false)
+  const [followerCount, setFollowerCount] = useState(0)
   const router = useRouter()
   const params = useParams()
   const artistId = params.id as string
+  const { following, refetch: refetchFollowing } = useFollowing()
+  const [isFollowing, setIsFollowing] = useState(false)
+
+  useEffect(() => {
+    setIsFollowing(following.some(user => user.id === Number(artistId)))
+  }, [following, artistId])
 
   const toggleLike = (postId: number) => {
     const newLiked = new Set(likedPosts)
@@ -78,92 +85,67 @@ export default function ArtistProfilePage() {
     router.push(`/hire?artist=${artistId}`)
   }
 
-  // Mock artist data
-  const artist = {
-    id: Number.parseInt(artistId),
-    name: "Priya Sharma",
-    username: "@priya_art",
-    avatar: "/placeholder.svg?height=128&width=128",
-    verified: true,
-    bio: "Contemporary artist specializing in oil paintings and digital art. Inspired by nature, urban landscapes, and human emotions. Featured in multiple exhibitions across India.",
-    location: "Mumbai, India",
-    website: "https://priyasharma.art",
-    instagram: "@priya_art_official",
-    twitter: "@priya_artist",
-    followers: 2341,
-    following: 156,
-    artworks: 45,
-    joinedDate: "January 2020",
+  const handleFollowToggle = async () => {
+    const numArtistId = Number(artistId)
+    if (isNaN(numArtistId)) {
+      toast.error("Invalid artist ID")
+      return
+    }
+    try {
+      if (isFollowing) {
+        await apiClient.unfollowArtist(numArtistId)
+        setFollowerCount((count) => count - 1)
+      } else {
+        console.log("Sending follow request for artistId:", numArtistId)
+        await apiClient.followArtist(numArtistId)
+        console.log("Follow request successful")
+        setFollowerCount((count) => count + 1)
+      }
+      await refetchFollowing()
+      setIsFollowing(!isFollowing)
+      toast.success(isFollowing ? "Unfollowed artist" : "Followed artist")
+    } catch (error: any) {
+      console.error("Failed to update follow status:", error)
+      if (error.message) {
+        toast.error(error.message)
+      } else {
+        toast.error("Failed to update follow status")
+      }
+    }
   }
 
-  const artworks = [
-    {
-      id: 1,
-      title: "Sunset Dreams",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "15000",
-      likes: 234,
-      comments: 18,
-      views: 1200,
-      category: "Painting",
-      timeAgo: "2h",
-    },
-    {
-      id: 2,
-      title: "Urban Rhythm",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "45000",
-      likes: 156,
-      comments: 12,
-      views: 890,
-      category: "Sculpture",
-      timeAgo: "4h",
-    },
-    {
-      id: 3,
-      title: "Digital Mandala",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "8500",
-      likes: 89,
-      comments: 7,
-      views: 567,
-      category: "Digital Art",
-      timeAgo: "6h",
-    },
-    {
-      id: 4,
-      title: "Morning Glory",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "18000",
-      likes: 312,
-      comments: 24,
-      views: 1456,
-      category: "Painting",
-      timeAgo: "1d",
-    },
-    {
-      id: 5,
-      title: "Abstract Thoughts",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "9500",
-      likes: 198,
-      comments: 15,
-      views: 743,
-      category: "Digital Art",
-      timeAgo: "2d",
-    },
-    {
-      id: 6,
-      title: "Nature's Call",
-      image: "/placeholder.svg?height=300&width=300",
-      price: "22000",
-      likes: 445,
-      comments: 31,
-      views: 2134,
-      category: "Painting",
-      timeAgo: "3d",
-    },
-  ]
+  const [artist, setArtist] = useState<any>(null)
+  const [artworks, setArtworks] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchArtistData = async () => {
+      try {
+        setLoading(true)
+        const artistData = await apiClient.getPublicProfile(Number(artistId))
+        setArtist(artistData)
+        setFollowerCount(artistData.followers || 0)
+        const artworksData = await apiClient.getArtworks({ artist: Number(artistId) })
+        setArtworks(artworksData)
+      } catch (error) {
+        toast.error("Failed to load artist data")
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchArtistData()
+  }, [artistId])
+
+  if (loading || !artist) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600 dark:text-slate-400">Loading artist profile...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
@@ -198,39 +180,45 @@ export default function ArtistProfilePage() {
           <CardContent className="p-6">
             <div className="flex flex-col md:flex-row items-start gap-6">
               <Avatar className="w-32 h-32">
-                <AvatarImage src={artist.avatar || "/placeholder.svg"} />
-                <AvatarFallback className="text-2xl">{artist.name[0]}</AvatarFallback>
+                <AvatarImage src={artist?.profile_image || "/placeholder.svg"} />
+                <AvatarFallback className="text-2xl">
+                  {artist?.first_name ? artist.first_name[0] : "A"}
+                </AvatarFallback>
               </Avatar>
 
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="text-3xl font-bold">{artist.name}</h1>
-                  {artist.verified && (
+                  <h1 className="text-3xl font-bold">
+                    {artist?.first_name && artist?.last_name
+                      ? `${artist.first_name} ${artist.last_name}`
+                      : "Artist"}
+                  </h1>
+                  {artist?.is_verified && (
                     <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
                       <span className="text-white text-xs">✓</span>
                     </div>
                   )}
                 </div>
-                <p className="text-slate-600 dark:text-slate-400 mb-3">{artist.username}</p>
+                <p className="text-slate-600 dark:text-slate-400 mb-3">{artist?.username || ""}</p>
 
                 <div className="flex items-center gap-6 mb-4">
                   <div className="text-center">
-                    <div className="font-bold text-lg">{artist.artworks}</div>
+                    <div className="font-bold text-lg">{artist?.artworks || 0}</div>
                     <div className="text-sm text-slate-600 dark:text-slate-400">Artworks</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-lg">{artist.followers.toLocaleString()}</div>
+                    <div className="font-bold text-lg">{followerCount.toLocaleString()}</div>
                     <div className="text-sm text-slate-600 dark:text-slate-400">Followers</div>
                   </div>
                   <div className="text-center">
-                    <div className="font-bold text-lg">{artist.following}</div>
+                    <div className="font-bold text-lg">{artist?.following || 0}</div>
                     <div className="text-sm text-slate-600 dark:text-slate-400">Following</div>
                   </div>
                 </div>
 
                 <div className="flex gap-3 mb-4">
                   <Button
-                    onClick={() => setIsFollowing(!isFollowing)}
+                    onClick={handleFollowToggle}
                     variant={isFollowing ? "outline" : "default"}
                     className={
                       !isFollowing
@@ -346,7 +334,7 @@ export default function ArtistProfilePage() {
                           className={likedPosts.has(artwork.id) ? "text-red-500" : "text-slate-600 dark:text-slate-400"}
                         >
                           <Heart className={`w-4 h-4 ${likedPosts.has(artwork.id) ? "fill-current" : ""}`} />
-                          <span className="ml-1">{artwork.likes + (likedPosts.has(artwork.id) ? 1 : 0)}</span>
+                          <span className="ml-1">{(Number(artwork.likes) || 0) + (likedPosts.has(artwork.id) ? 1 : 0)}</span>
                         </Button>
                         <CommentSection
                           postId={artwork.id}
