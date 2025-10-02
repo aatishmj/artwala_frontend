@@ -95,7 +95,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-orange-100 dark:from-gray-900 dark:via-purple-900/20 dark:to-pink-900/20 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
       {/* Header */}
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
@@ -122,7 +122,7 @@ export default function SignupPage() {
             <TabsTrigger value="artist">Artist</TabsTrigger>
           </TabsList>
 
-          <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-2xl">
+          <Card className="backdrop-blur-sm bg-gray-50 dark:bg-gray-800/90 border-0 shadow-2xl">
             <CardHeader className="text-center">
               <CardTitle>Create Account</CardTitle>
               <CardDescription>

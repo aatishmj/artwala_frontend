@@ -23,9 +23,9 @@ export default function HomePage() {
   }, [loading, isAuthenticated, user, router])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 dark:from-slate-900 dark:to-slate-800">
       {/* Header */}
-      <header className="border-b bg-white/90 dark:bg-gray-900/90 backdrop-blur-md sticky top-0 z-50">
+      <header className="border-b bg-gray-50 dark:bg-gray-900/90 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -123,21 +123,21 @@ export default function HomePage() {
 
           {/* Mission Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12 lg:mb-16">
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-100 to-indigo-100 dark:from-slate-800 dark:to-slate-700">
               <CardContent className="p-4 sm:p-6 text-center">
                 <Brush className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 mx-auto mb-3 sm:mb-4 text-purple-600" />
                 <h3 className="font-semibold mb-2 text-sm sm:text-base">Create</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">Mentor and guide artists across all disciplines</p>
               </CardContent>
             </Card>
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-700 dark:to-slate-600">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-slate-800 dark:to-slate-700">
               <CardContent className="p-4 sm:p-6 text-center">
                 <Users className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 mx-auto mb-3 sm:mb-4 text-pink-600" />
                 <h3 className="font-semibold mb-2 text-sm sm:text-base">Reach</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground">Connect artists with connoisseurs and collectors</p>
               </CardContent>
             </Card>
-            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-50 to-pink-50 dark:from-slate-600 dark:to-slate-500">
+            <Card className="border-0 shadow-lg bg-gradient-to-br from-purple-100 to-pink-100 dark:from-slate-800 dark:to-slate-700">
               <CardContent className="p-4 sm:p-6 text-center">
                 <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12 mx-auto mb-3 sm:mb-4 text-orange-600" />
                 <h3 className="font-semibold mb-2 text-sm sm:text-base">Celebrate</h3>
@@ -237,7 +237,7 @@ export default function HomePage() {
       </section>
 
       {/* Values Section */}
-      <section className="bg-gradient-to-r from-pastel-sage/30 to-pastel-cream/30 dark:bg-gray-800/30 py-12 sm:py-16 lg:py-20">
+      <section className="bg-gradient-to-r from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-700 py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="text-center mb-8 sm:mb-12 lg:mb-16">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4">Our Core Values</h2>
