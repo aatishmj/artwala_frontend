@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { UserMenu } from "@/components/user-menu"
-import { UserSidebar } from "@/components/side-menu"
 
 import {
   Search,
@@ -22,6 +21,8 @@ import {
   MapPin,
   Bookmark,
   TrendingUp,
+  Menu,
+  X,
 } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
@@ -32,33 +33,93 @@ import { getImageUrl } from "@/lib/utils"
 
 export default function ExplorePage() {
   const [activeCategory, setActiveCategory] = useState("all")
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const { recommendations, loading: recLoading } = useArtistRecommendations()
   const { artworks, loading: artLoading } = useArtworks({ limit: 4 })
   const { categories: dynamicCategories, loading: catLoading } = useCategories()
 
+  const navigationItems = [
+    { href: "/user/feed", icon: Home, label: "Feed", active: false },
+    { href: "/user/explore", icon: Compass, label: "Explore", active: true },
+    { href: "/user/wishlist", icon: Heart, label: "Wishlist", active: false },
+    { href: "/user/orders", icon: ShoppingBag, label: "Orders", active: false },
+    { href: "/user/profile", icon: User, label: "Profile", active: false },
+  ]
 
+  const suggestedArtists = [
+    {
+      id: 1,
+      name: "Priya Sharma",
+      username: "@priya_art",
+      avatar: "/placeholder.svg?height=60&width=60",
+      verified: true,
+      location: "Mumbai",
+      followers: "2.3K",
+      artworks: 45
+    },
+    {
+      id: 2,
+      name: "Arjun Patel",
+      username: "@arjun_sculpts",
+      avatar: "/placeholder.svg?height=60&width=60",
+      verified: false,
+      location: "Delhi",
+      followers: "1.8K",
+      artworks: 32
+    },
+    {
+      id: 3,
+      name: "Maya Singh",
+      username: "@maya_digital",
+      avatar: "/placeholder.svg?height=60&width=60",
+      verified: true,
+      location: "Bangalore",
+      followers: "3.1K",
+      artworks: 67
+    }
+  ]
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 dark:from-gray-900 dark:to-purple-900/20">
       {/* Header */}
       <header className="bg-white/95 dark:bg-gray-800/95 border-b sticky top-0 z-50 backdrop-blur-md">
-          <div className="container mx-auto px-4 py-3">
+        <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg rounded-lg flex items-center justify-center">
-                <Palette className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-bold text-lg">ARTWALA</span>
-            </Link>
+            <div className="flex items-center gap-4">
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </Button>
 
-            <div className="flex-1 max-w-md mx-8">
-              <div className="relative">
+              <Link href="/" className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg rounded-lg flex items-center justify-center">
+                  <Palette className="w-5 h-5 text-white" />
+                </div>
+                <span className="font-bold text-lg">ARTWALA</span>
+              </Link>
+            </div>
+
+            <div className="hidden md:flex flex-1 max-w-md mx-8">
+              <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
-                <Input placeholder="Search artists, artworks..." className="pl-10 bg-white dark:bg-slate-700" />
+                <Input 
+                  placeholder="Search artists, artworks..." 
+                  className="pl-10 bg-white dark:bg-slate-700 w-full" 
+                />
               </div>
             </div>
 
             <div className="flex items-center gap-4">
+              <div className="md:hidden">
+                <Button variant="ghost" size="icon">
+                  <Search className="w-5 h-5" />
+                </Button>
+              </div>
               <ThemeToggle />
               <UserMenu />
             </div>
@@ -66,18 +127,157 @@ export default function ExplorePage() {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid lg:grid-cols-4 gap-6">
-          {/* Sidebar */}
-          <UserSidebar/>
+      {/* Mobile Navigation Menu */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+          <div className="container mx-auto px-4 py-3">
+            <nav className="space-y-2">
+              {navigationItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 p-3 rounded-lg ${
+                    item.active 
+                      ? "bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-700 dark:text-blue-300" 
+                      : "hover:bg-slate-100 dark:hover:bg-slate-700"
+                  }`}
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <item.icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              ))}
+            </nav>
 
-          {/* Main Content */}
-          <div className="lg:col-span-3 space-y-6">
+            {/* Mobile Suggested Artists */}
+            <div className="mt-6">
+              <h3 className="font-semibold mb-4">Suggested Artists</h3>
+              <div className="space-y-4">
+                {suggestedArtists.map((artist) => (
+                  <div key={artist.id} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={artist.avatar} />
+                        <AvatarFallback>{artist.name?.[0] || 'A'}</AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="font-medium text-sm">
+                          {artist.name}
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">{artist.username}</div>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="sm" className="bg-transparent text-xs">
+                      Follow
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Mobile Trending Categories */}
+            <div className="mt-6">
+              <h3 className="font-semibold mb-4">Trending Categories</h3>
+              <div className="flex flex-wrap gap-2">
+                {["Paintings", "Digital Art", "Sculptures", "Photography", "Crafts"].map((category) => (
+                  <Badge
+                    key={category}
+                    variant="secondary"
+                    className="bg-slate-100 dark:bg-slate-700 text-xs font-normal"
+                  >
+                    {category}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex gap-6">
+          {/* Sidebar - Hidden on mobile, shown on desktop */}
+          <div className="hidden lg:block w-80 flex-shrink-0">
+            <div className="sticky top-24 space-y-6">
+              {/* Main Navigation Card */}
+              <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                <CardContent className="p-4">
+                  <nav className="space-y-2">
+                    {navigationItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center gap-3 p-2 rounded-lg ${
+                          item.active 
+                            ? "bg-gradient-to-r from-blue-100 to-purple-100 dark:from-blue-900/30 dark:to-purple-900/30 text-blue-700 dark:text-blue-300 shadow-sm" 
+                            : "hover:bg-slate-100 dark:hover:bg-slate-700"
+                        }`}
+                      >
+                        <item.icon className="w-5 h-5" />
+                        <span className="font-medium">{item.label}</span>
+                      </Link>
+                    ))}
+                  </nav>
+                </CardContent>
+              </Card>
+
+              {/* Suggested Artists */}
+              <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                <CardHeader className="p-4">
+                  <h3 className="font-semibold">Suggested Artists</h3>
+                </CardHeader>
+                <CardContent className="p-4 space-y-4">
+                  {suggestedArtists.map((artist) => (
+                    <div key={artist.id} className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="w-10 h-10">
+                          <AvatarImage src={artist.avatar} />
+                          <AvatarFallback>{artist.name?.[0] || 'A'}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium text-sm">
+                            {artist.name}
+                          </div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400">{artist.username}</div>
+                        </div>
+                      </div>
+                      <Button variant="outline" size="sm" className="bg-transparent text-xs">
+                        Follow
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Trending Categories */}
+              <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                <CardHeader className="p-4">
+                  <h3 className="font-semibold">Trending Categories</h3>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="flex flex-wrap gap-2">
+                    {["Paintings", "Digital Art", "Sculptures", "Photography", "Crafts"].map((category) => (
+                      <Badge
+                        key={category}
+                        variant="secondary"
+                        className="bg-slate-100 dark:bg-slate-700 text-xs font-normal"
+                      >
+                        {category}
+                      </Badge>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+          
+          {/* Main Content - Full width on mobile, 3 columns on desktop */}
+          <div className="flex-1 space-y-6">
             {/* Hero Section */}
             <Card className="bg-gradient-to-r from-purple-600 to-pink-600 text-white border-0">
-              <CardContent className="p-8">
-                <h1 className="text-3xl font-bold mb-2">Discover Amazing Art</h1>
-                <p className="text-purple-100 mb-4">Explore thousands of artworks from talented artists across India</p>
+              <CardContent className="p-6 sm:p-8">
+                <h1 className="text-2xl sm:text-3xl font-bold mb-2">Discover Amazing Art</h1>
+                <p className="text-purple-100 mb-4 text-sm sm:text-base">Explore thousands of artworks from talented artists across India</p>
                 <Button variant="secondary" className="bg-white text-purple-600 hover:bg-gray-100">
                   Start Exploring
                 </Button>
@@ -136,7 +336,7 @@ export default function ExplorePage() {
               </CardHeader>
               <CardContent>
                 {recLoading ? (
-                  <div className="grid md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {Array.from({ length: 3 }).map((_, i) => (
                       <Card key={i} className="hover:shadow-lg transition-shadow">
                         <CardContent className="p-4 text-center">
@@ -150,7 +350,7 @@ export default function ExplorePage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="grid md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {(recommendations?.trending_artists || []).map((artist) => (
                       <Card key={artist.id} className="hover:shadow-lg transition-shadow">
                         <CardContent className="p-4 text-center">
@@ -199,7 +399,7 @@ export default function ExplorePage() {
               </CardHeader>
               <CardContent>
                 {artLoading ? (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {Array.from({ length: 4 }).map((_, i) => (
                       <Card key={i} className="overflow-hidden">
                         <Skeleton className="w-full h-48" />
@@ -212,7 +412,7 @@ export default function ExplorePage() {
                     ))}
                   </div>
                 ) : (
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {artworks.map((artwork) => (
                       <Card key={artwork.id} className="group hover:shadow-lg transition-shadow overflow-hidden">
                         <div className="relative">
@@ -238,8 +438,8 @@ export default function ExplorePage() {
                           </div>
                         </div>
                         <CardContent className="p-4">
-                          <h3 className="font-semibold mb-1">{artwork.title}</h3>
-                          <p className="text-sm text-muted-foreground mb-2">by {artwork.artist.first_name} {artwork.artist.last_name}</p>
+                          <h3 className="font-semibold mb-1 line-clamp-1">{artwork.title}</h3>
+                          <p className="text-sm text-muted-foreground mb-2 line-clamp-1">by {artwork.artist.first_name} {artwork.artist.last_name}</p>
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-green-600">₹{artwork.price}</span>
                             <div className="flex gap-2">
@@ -247,7 +447,8 @@ export default function ExplorePage() {
                                 <Eye className="w-4 h-4" />
                               </Button>
                               <Button size="sm" className="bg-gradient-to-r from-purple-500 to-pink-500">
-                                Buy
+                                <ShoppingBag className="w-4 h-4 mr-1" />
+                                <span className="hidden sm:inline">Buy</span>
                               </Button>
                             </div>
                           </div>
