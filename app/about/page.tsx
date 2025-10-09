@@ -8,7 +8,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pastel-peach via-white to-pastel-lavender dark:from-gray-900 dark:via-gray-800 dark:to-purple-900/20">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
       {/* Header */}
       <header className="border-b bg-white/90 dark:bg-gray-900/90 backdrop-blur-md sticky top-0 z-50">
         <div className="container mx-auto px-4 sm:px-6 py-4">

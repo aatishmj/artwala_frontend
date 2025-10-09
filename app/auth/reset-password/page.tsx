@@ -13,7 +13,7 @@ import { Palette, ArrowLeft, Loader2, Eye, EyeOff, CheckCircle, XCircle } from "
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 
-function ResetPasswordInner() {
+function ResetPasswordContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
@@ -40,7 +40,7 @@ function ResetPasswordInner() {
     // Validate token
     const validateToken = async () => {
       try {
-        const response = await fetch(`http://localhost:8000/api/auth/validate-reset/?token=${token}`)
+        const response = await fetch(`http://72.60.200.27:8000/api/auth/validate-reset/?token=${token}`)
         const data = await response.json()
         if (response.ok && data.valid) {
           setTokenValid(true)
@@ -73,7 +73,7 @@ function ResetPasswordInner() {
     setError("")
 
     try {
-      const response = await fetch("http://localhost:8000/api/auth/reset-password/", {
+      const response = await fetch("http://72.60.200.27:8000/api/auth/reset-password/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -307,14 +307,14 @@ function ResetPasswordInner() {
 export default function ResetPasswordPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-100 via-pink-50 to-orange-100 dark:from-gray-900 dark:via-purple-900/20 dark:to-pink-900/20">
+      <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-orange-100 dark:from-gray-900 dark:via-purple-900/20 dark:to-pink-900/20 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Preparing reset form...</p>
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-purple-600" />
+          <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     }>
-      <ResetPasswordInner />
+      <ResetPasswordContent />
     </Suspense>
   )
 }

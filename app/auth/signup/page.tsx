@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,14 +19,14 @@ import { useAuth } from "@/hooks/useAuth"
 export default function SignupPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { register } = useAuth()
+  const { register, isAuthenticated, loading, user } = useAuth()
 
   const typeParam = searchParams.get("type")
   const [showPassword, setShowPassword] = useState(false)
   const [userType, setUserType] = useState<"user" | "artist">(
     typeParam === "artist" || typeParam === "user" ? typeParam : "user",
   )
-  const [loading, setLoading] = useState(false)
+  const [signupLoading, setSignupLoading] = useState(false)
   const [error, setError] = useState("")
   const [formData, setFormData] = useState({
     firstName: "",
@@ -38,6 +38,13 @@ export default function SignupPage() {
     phone: "",
     acceptTerms: false,
   })
+
+  useEffect(() => {
+    if (!loading && isAuthenticated && user) {
+      const redirectPath = user.user_type === "artist" ? "/artist/dashboard" : "/user/feed"
+      router.push(redirectPath)
+    }
+  }, [loading, isAuthenticated, user, router])
 
   const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -62,7 +69,7 @@ export default function SignupPage() {
       return
     }
 
-    setLoading(true)
+    setSignupLoading(true)
     setError("")
 
     try {
@@ -83,12 +90,12 @@ export default function SignupPage() {
     } catch (err: any) {
       setError(err.message || "Registration failed. Please try again.")
     } finally {
-      setLoading(false)
+      setSignupLoading(false)
     }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-pink-50 to-orange-100 dark:from-gray-900 dark:via-purple-900/20 dark:to-pink-900/20 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-100 to-blue-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
       {/* Header */}
       <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2">
@@ -115,7 +122,7 @@ export default function SignupPage() {
             <TabsTrigger value="artist">Artist</TabsTrigger>
           </TabsList>
 
-          <Card className="backdrop-blur-sm bg-white/90 dark:bg-gray-800/90 border-0 shadow-2xl">
+          <Card className="backdrop-blur-sm bg-gray-50 dark:bg-gray-800/90 border-0 shadow-2xl">
             <CardHeader className="text-center">
               <CardTitle>Create Account</CardTitle>
               <CardDescription>
@@ -260,9 +267,9 @@ export default function SignupPage() {
                 <Button
                   type="submit"
                   className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700"
-                  disabled={loading}
+                  disabled={signupLoading}
                 >
-                  {loading ? (
+                  {signupLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Creating Account...

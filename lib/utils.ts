@@ -11,6 +11,7 @@ export function getImageUrl(imagePath: string | null | undefined): string {
   if (!imagePath || typeof imagePath !== 'string' || !imagePath.trim()) {
     return "/placeholder.svg?height=128&width=128"
   }
+<<<<<<< HEAD
 
   const cleaned = imagePath.trim()
 
@@ -40,6 +41,23 @@ export function getImageUrl(imagePath: string | null | undefined): string {
 
   // Bare filename (likely profile image stored as just name) -> profiles folder
   return `${BASE}/media/profiles/${cleaned}`
+=======
+  
+  // If it's already a full URL, return as is
+  if (imagePath.startsWith('https://') || imagePath.startsWith('https://')) {
+    return imagePath
+  }
+  
+  // If it starts with /media/, prepend the backend URL
+  if (imagePath.startsWith('/media/')) {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || " https://72.60.200.27:8000"
+    return `${API_BASE_URL}${imagePath}`
+  }
+  
+  // If it's just a filename, assume it's in the media/profiles/ directory
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://72.60.200.27:8000"
+  return `${API_BASE_URL}/media/profiles/${imagePath}`
+>>>>>>> origin/aatish
 }
 
 // utils.ts

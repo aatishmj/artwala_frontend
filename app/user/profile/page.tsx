@@ -1,12 +1,13 @@
 "use client"
 
+import React, { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { Eye, Bookmark, Settings, Edit, MapPin, Calendar, LinkIcon, User, Heart, ShoppingBag } from "lucide-react"
+import { Eye, Bookmark, Settings, Edit, MapPin, Calendar, LinkIcon, User, Heart, ShoppingBag, Menu, X, Search, Home, Compass } from "lucide-react"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { EditProfileModal } from "@/components/edit-profile-modal"
@@ -18,6 +19,7 @@ import { useFollowing } from "@/hooks/useFollowing"
 import { getImageUrl } from "@/lib/utils"
 import { UserMenu } from "@/components/user-menu"
 import { UserSidebar } from "@/components/side-menu"
+import { Input } from "@/components/ui/input"
 
 export default function UserProfile() {
   const { user } = useAuth()
@@ -26,13 +28,14 @@ export default function UserProfile() {
   const { wishlist, loading: wishlistLoading } = useWishlist()
   const { orders, loading: ordersLoading } = useUserOrders()
   const { following, loading: followingLoading } = useFollowing()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   if (profileLoading || statsLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading profile...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600 dark:text-slate-400">Loading profile...</p>
         </div>
       </div>
     )
@@ -40,7 +43,7 @@ export default function UserProfile() {
 
   if (profileError || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <p className="text-red-600 dark:text-red-400 mb-4">Failed to load profile</p>
           <Button onClick={() => window.location.reload()}>Try Again</Button>
@@ -58,19 +61,43 @@ export default function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pastel-rose to-pastel-sage dark:bg-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800">
       {/* Header */}
       <header className="bg-white/95 dark:bg-slate-800/95 border-b border-slate-200 dark:border-slate-700 backdrop-blur-md">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/user/feed" className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">A</span>
+            <div className="flex items-center gap-4">
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              >
+                {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </Button>
+
+              <Link href="/" className="flex items-center gap-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-purple-600 shadow-lg rounded-lg flex items-center justify-center">
+                  <User className="w-5 h-5 text-white" />
+                </div>
+                <span className="font-bold text-lg">ARTWALA</span>
+              </Link>
+            </div>
+
+            <div className="hidden md:flex flex-1 max-w-md mx-8">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
+                <Input placeholder="Search artists, artworks..." className="pl-10 bg-white dark:bg-slate-700" />
               </div>
-              <span className="font-bold text-lg">ARTWALA</span>
-            </Link>
+            </div>
 
             <div className="flex items-center gap-4">
+              <div className="md:hidden">
+                <Button variant="ghost" size="icon">
+                  <Search className="w-5 h-5" />
+                </Button>
+              </div>
               <ThemeToggle />
               <UserMenu />
             </div>
@@ -78,10 +105,62 @@ export default function UserProfile() {
         </div>
       </header>
 
+      {/* Mobile Navigation Menu */}
+      {isMobileMenuOpen && (
+        <div className="lg:hidden bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+          <div className="container mx-auto px-4 py-3">
+            <nav className="space-y-2">
+              <Link
+                href="/user/feed"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Home className="w-5 h-5" />
+                <span className="font-medium">Feed</span>
+              </Link>
+              <Link
+                href="/user/explore"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Compass className="w-5 h-5" />
+                <span className="font-medium">Explore</span>
+              </Link>
+              <Link
+                href="/user/wishlist"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Heart className="w-5 h-5" />
+                <span className="font-medium">Wishlist</span>
+              </Link>
+              <Link
+                href="/user/orders"
+                className="flex items-center gap-3 p-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <ShoppingBag className="w-5 h-5" />
+                <span className="font-medium">Orders</span>
+              </Link>
+              <Link
+                href="/user/profile"
+                className="flex items-center gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <User className="w-5 h-5" />
+                <span className="font-medium">Profile</span>
+              </Link>
+            </nav>
+          </div>
+        </div>
+      )}
+
       {/* Main Body */}
       <div className="container mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Sidebar */}
-        <UserSidebar />
+        <div className="hidden lg:block">
+          <UserSidebar />
+        </div>
 
         {/* Main Content */}
         <div className="lg:col-span-3 space-y-6">
@@ -136,13 +215,13 @@ export default function UserProfile() {
                     {profile.bio || "Art enthusiast and collector passionate about supporting emerging artists."}
                   </p>
 
-                  {stats?.profile_completion !== undefined && typeof stats.profile_completion === 'object' && stats.profile_completion?.percentage < 100 && (
-                    <div className="mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg border border-amber-200 dark:border-amber-800">
+                  {stats?.profile_completion !== undefined && stats.profile_completion.percentage < 100 && (
+                    <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
                           Complete your profile
                         </span>
-                        <span className="text-sm text-amber-600 dark:text-amber-400">
+                        <span className="text-sm text-blue-600 dark:text-blue-400">
                           {Math.round(stats.profile_completion.percentage)}%
                         </span>
                       </div>
@@ -160,21 +239,21 @@ export default function UserProfile() {
                         <Heart className="w-4 h-4" />
                         {userStats.likes}
                       </div>
-                      <div className="text-sm text-muted-foreground">Likes Given</div>
+                      <div className="text-muted-foreground">Likes Given</div>
                     </div>
                     <div className="text-center">
                       <div className="font-bold text-xl flex items-center gap-1">
                         <Bookmark className="w-4 h-4" />
                         {userStats.saved}
                       </div>
-                      <div className="text-sm text-muted-foreground">Saved</div>
+                      <div className="text-muted-foreground">Saved</div>
                     </div>
                     <div className="text-center">
                       <div className="font-bold text-xl flex items-center gap-1">
                         <ShoppingBag className="w-4 h-4" />
                         {userStats.orders}
                       </div>
-                      <div className="text-sm text-muted-foreground">Orders</div>
+                      <div className="text-muted-foreground">Orders</div>
                     </div>
                   </div>
                 </div>
@@ -183,12 +262,32 @@ export default function UserProfile() {
           </Card>
 
           {/* Tabs Section */}
-          <Tabs defaultValue="saved" className="space-y-6">
+          <Tabs defaultValue="following" className="space-y-6">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="saved">Saved Artworks</TabsTrigger>
               <TabsTrigger value="purchases">Purchase History</TabsTrigger>
               <TabsTrigger value="following">Following</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="saved">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                  <CardContent className="p-6 text-center">
+                    <p>No saved artworks yet.</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="purchases">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+                  <CardContent className="p-6 text-center">
+                    <p>No purchases yet.</p>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
 
             <TabsContent value="following">
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">

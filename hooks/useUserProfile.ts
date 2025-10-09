@@ -85,11 +85,7 @@ export const useUserProfile = (userId?: number) => {
       const formData = new FormData();
       formData.append('profile_image', imageFile);
 
-      const response = await apiClient.post<UserProfile>('/api/profile/image/', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await apiClient.post<UserProfile>('/api/profile/image/', formData);
       setProfile(response.data);
       return response.data;
     } catch (err: any) {
