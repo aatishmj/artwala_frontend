@@ -120,29 +120,14 @@ export interface WishlistItem {
   }
 }
 
-<<<<<<< HEAD
-// ---- Orders & Messaging (added to satisfy missing type references) ----
-// Order creation payload actually expected by backend (OrderCreateView)
-export interface CreateOrderData {
-  artwork_id: number
-  quantity?: number
-}
-
-export interface OrderItem {
-  artwork: Artwork
-  quantity: number
-  price: number
-=======
 export interface CreateOrderData {
   // Add properties as needed
   artwork_id: number
   quantity: number
->>>>>>> origin/aatish
 }
 
 export interface Order {
   id: number
-<<<<<<< HEAD
   user: number
   status: string
   total_amount: number
@@ -151,26 +136,14 @@ export interface Order {
   updated_at: string
   payment_status?: string
   tracking_code?: string
-=======
-  status: string
-  // Add other properties as needed
->>>>>>> origin/aatish
 }
 
 export interface Message {
   id: number
-<<<<<<< HEAD
-  sender: User
-  recipient: User
-  content: string
-  timestamp: string
-  is_read: boolean
-=======
   content: string
   sender: number
   recipient: number
   timestamp: string
->>>>>>> origin/aatish
 }
 
 
@@ -283,33 +256,6 @@ class ApiClient {
         // Parse error body (JSON or text) to expose meaningful details
         let errorMessage = `HTTP error! status: ${response.status}`
         try {
-<<<<<<< HEAD
-          if (response.status !== 204) {
-            const ct = response.headers.get('Content-Type') || ''
-            let errorData: any
-            if (ct.includes('application/json')) {
-              // clone before consuming in case downstream wants raw response later
-              errorData = await response.clone().json()
-            } else {
-              errorData = await response.text()
-            }
-
-            if (errorData) {
-              // DRF / custom patterns
-              if (typeof errorData === 'object') {
-                if (errorData.detail) errorMessage = errorData.detail
-                else if (errorData.error) errorMessage = errorData.error
-                else if (errorData.message) errorMessage = errorData.message
-                else if (errorData.non_field_errors && Array.isArray(errorData.non_field_errors) && errorData.non_field_errors.length) {
-                  errorMessage = errorData.non_field_errors[0]
-                } else {
-                  // Collect first field error if present
-                  const firstKey = Object.keys(errorData)[0]
-                  if (firstKey && Array.isArray(errorData[firstKey])) {
-                    errorMessage = `${firstKey}: ${errorData[firstKey][0]}`
-                  }
-                }
-=======
             // Only attempt to parse if content length isn't zero
             if (response.status !== 204) {
               errorData = await response.json()
@@ -321,7 +267,6 @@ class ApiClient {
                 errorMessage = errorData.non_field_errors[0]
               } else if (errorData.message) {
                 errorMessage = errorData.message
->>>>>>> origin/aatish
               } else if (typeof errorData === 'string') {
                 // If HTML (starts with <!doctype) provide compact hint instead of dumping markup
                 if (/<!doctype|<html/i.test(errorData)) {
@@ -331,12 +276,6 @@ class ApiClient {
                 }
               }
             }
-<<<<<<< HEAD
-          }
-        } catch (parseErr) {
-          console.warn('Failed to parse error response body', parseErr)
-        }
-=======
         } catch (e) {
           console.log("Failed to parse error response as JSON, trying text:", e)
           try {
@@ -358,7 +297,6 @@ class ApiClient {
         }
 
         console.log("Throwing error:", errorMessage)
->>>>>>> origin/aatish
         throw new Error(errorMessage)
       }
       // DELETE / 204 No Content or empty body handling
@@ -575,12 +513,8 @@ class ApiClient {
     })
     return { data }
   }
-<<<<<<< HEAD
-  // (Removed duplicate getWishlist / addToWishlist / removeFromWishlist definitions below)
-=======
 
 
->>>>>>> origin/aatish
 
   // Profile completion details
   async getProfileCompletion(): Promise<any> {
@@ -635,8 +569,6 @@ class ApiClient {
   async getConversations(): Promise<User[]> {
     return this.request<User[]>("/api/messages/")
   }
-<<<<<<< HEAD
-=======
 
   // Follow/Unfollow
   async followArtist(artistId: number): Promise<void> {
@@ -654,7 +586,6 @@ class ApiClient {
     })
   }
 
->>>>>>> origin/aatish
 }
 
 export const apiClient = new ApiClient()
@@ -665,13 +596,7 @@ export async function fetchWishlist() {
 
   if (!token) throw new Error("No access token found")
 
-<<<<<<< HEAD
-  // Use the same env variable as the rest of the client (avoid split between NEXT_PUBLIC_API_URL & NEXT_PUBLIC_API_BASE_URL)
-  const base = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "https://artwala.org"
-  const res = await fetch(`${base}/api/wishlist/`, {
-=======
   const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"}/api/wishlist/`, {
->>>>>>> origin/aatish
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
